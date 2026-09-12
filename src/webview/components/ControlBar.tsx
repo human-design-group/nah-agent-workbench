@@ -1,6 +1,6 @@
 import React from 'react';
 import { LayoutMode } from '../types/workbench.js';
-import { LayoutGrid, Columns, Maximize2, Columns3, RotateCcw, Radio } from 'lucide-react';
+import { LayoutGrid, Columns, Rows, Maximize2, Columns3, RotateCcw, Radio } from 'lucide-react';
 
 interface ControlBarProps {
   layoutMode: LayoutMode;
@@ -23,7 +23,13 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         <span className="brand-badge">Mission Control</span>
       </div>
 
-      <div className="center-controls">
+      <div className="right-controls-group">
+        <div className="status-pill" title="Live ACP Multi-Agent Gateway">
+          <span className="live-dot" />
+          <span>{onlineCount} Agents Online</span>
+        </div>
+
+        {/* Mode Switcher positioned to the right */}
         <div className="mode-switcher">
           <button
             className={`mode-btn ${layoutMode === 'grid' ? 'active' : ''}`}
@@ -44,9 +50,18 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           </button>
 
           <button
+            className={`mode-btn ${layoutMode === 'horizontal' ? 'active' : ''}`}
+            onClick={() => onLayoutChange('horizontal')}
+            title="4x1 Horizontal Stack Layout"
+          >
+            <Rows size={13} />
+            <span>Horizontal Stack</span>
+          </button>
+
+          <button
             className={`mode-btn ${layoutMode === 'split-3' ? 'active' : ''}`}
             onClick={() => onLayoutChange('split-3')}
-            title="3 Columns Layout"
+            title="1x3 Strip Layout"
           >
             <Columns3 size={13} />
             <span>1x3 Strip</span>
@@ -58,15 +73,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             title="Single Agent Focus Mode (1x1)"
           >
             <Maximize2 size={13} />
-            <span>Focus Mode</span>
+            <span>Focus</span>
           </button>
-        </div>
-      </div>
-
-      <div className="status-section">
-        <div className="status-pill" title="Live ACP Multi-Agent Gateway">
-          <span className="live-dot" />
-          <span>{onlineCount} Agents Online</span>
         </div>
 
         <button

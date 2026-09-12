@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { AgentConfig, AgentChatMessage } from '../types/workbench.js';
-import { PlusCircle, ChevronDown, ChevronRight, Circle, ArrowUp, Activity, Check, Copy, Terminal, Cpu } from 'lucide-react';
+import { AgentConfig } from '../types/workbench.js';
+import { PlusCircle, ChevronDown, ChevronRight, Circle, ArrowUp, Mic, Check, Copy, Terminal, Cpu } from 'lucide-react';
 
 interface AgentChatViewProps {
   agent: AgentConfig;
@@ -19,6 +19,8 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedCot, setExpandedCot] = useState<Record<string, boolean>>({});
+  const [showModelMenu, setShowModelMenu] = useState(false);
+  const [showPermsMenu, setShowPermsMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -53,12 +55,30 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
     setExpandedCot((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const MODELS = [
+    'OmniRoute - Uno Orchestrate',
+    'OmniRoute - Omo Production',
+    'Gemini 2.5 Flash',
+    'Claude 3.7 Sonnet',
+    'DeepSeek-R1 (Bifrost)'
+  ];
+
+  const PERMS = ['Supervised', 'Auto-Approve', 'Autonomous', 'Sandbox'];
+
+  // Shorten model label for display if too long
+  const shortModel = agent.selectedModel.length > 18
+    ? agent.selectedModel.replace('OmniRoute - ', '').slice(0, 16) + '...'
+    : agent.selectedModel;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
       {/* Chat Messages Viewport */}
       <div className="chat-viewport">
         {agent.messages.map((msg) => (
-          <div key={msg.id} className="message-container">
+          <div
+            key={msg.id}
+            className={`message-container ${msg.sender === 'user' ? 'message-align-right' : 'message-align-left'}`}
+          >
             {/* Thinking / Chain of Thought Block */}
             {msg.thinking && (
               <div className="cot-block">
@@ -133,54 +153,79 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
               <PlusCircle size={15} color="#94a3b8" />
             </button>
 
-            {/* Permissions Select */}
-            <div
-              className="control-pill"
-              title="Permissions Policy"
-              onClick={() => {
-                const modes = ['Supervised', 'Auto-Approve', 'Autonomous', 'Sandbox'];
-                const nextIdx = (modes.indexOf(agent.permissionsMode) + 1) % modes.length;
-                onSelectPermissions(modes[nextIdx]);
-              }}
-            >
-              <span>{agent.permissionsMode || 'Supervised'}</span>
-              <ChevronDown size={10} />
+            {/* Permissions Pill */}
+            <div className="dropdown-pill-wrapper">
+              <div
+                className="control-pill"
+                title={`Permissions Mode: ${agent.permissionsMode}`}
+                onClick={() => setShowPermsMenu(!showPermsMenu)}
+              >
+                <span>Permissions</span>
+                <ChevronDown size={10} />
+              </div>
+              {showPermsMenu && (
+                <div className="pill-dropdown-menu">
+                  {PERMS.map((p) => (
+                    <div
+                      key={p}
+                      className={`pill-menu-item ${p === agent.permissionsMode ? 'selected' : ''}`}
+                      onClick={() => {
+                        onSelectPermissions(p);
+                        setShowPermsMenu(false);
+                      }}
+                    >
+                      <span>{p}</span>
+                      {p === agent.permissionsMode && <Check size={11} />}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Model Selector Pill */}
-            <div
-              className="control-pill"
-              title="Model & Gateway Route"
-              onClick={() => {
-                const models = [
-                  'OmniRoute - Uno Orchestrate',
-                  'OmniRoute - Omo Production',
-                  'Gemini 2.5 Flash',
-                  'Claude 3.7 Sonnet',
-                  'DeepSeek-R1 (Bifrost)'
-                ];
-                const nextIdx = (models.indexOf(agent.selectedModel) + 1) % models.length;
-                onSelectModel(models[nextIdx]);
-              }}
-            >
-              <Circle size={9} color="#85BFD1" />
-              <span>{agent.selectedModel}</span>
-              <ChevronDown size={10} />
+            <div className="dropdown-pill-wrapper">
+              <div
+                className="control-pill"
+                title={`Full Model: ${agent.selectedModel}`}
+                onClick={() => setShowModelMenu(!showModelMenu)}
+              >
+                <Circle size={8} color="#38bdf8" />
+                <span>{shortModel}</span>
+                <ChevronDown size={10} />
+              </div>
+              {showModelMenu && (
+                <div className="pill-dropdown-menu model-dropdown">
+                  <div className="dropdown-heading">Select Model / Route</div>
+                  {MODELS.map((m) => (
+                    <div
+                      key={m}
+                      className={`pill-menu-item ${m === agent.selectedModel ? 'selected' : ''}`}
+                      onClick={() => {
+                        onSelectModel(m);
+                        setShowModelMenu(false);
+                      }}
+                    >
+                      <span>{m}</span>
+                      {m === agent.selectedModel && <Check size={11} />}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           <div className="composer-controls-right">
-            {/* Voice Waveform Indicator */}
+            {/* Voice Input Button with Microphone Icon */}
             <button
               type="button"
-              className={`icon-button ${isRecording ? 'voice-active' : ''}`}
+              className={`icon-button voice-btn ${isRecording ? 'voice-active' : ''}`}
               onClick={() => setIsRecording(!isRecording)}
-              title={isRecording ? 'Recording Audio...' : 'Start Voice Input'}
+              title={isRecording ? 'Recording Voice...' : 'Start Voice Input (Mic)'}
             >
-              <Activity size={14} color={isRecording ? '#38bdf8' : '#94a3b8'} />
+              <Mic size={14} color={isRecording ? '#38bdf8' : '#94a3b8'} />
             </button>
 
-            {/* Submit Arrow */}
+            {/* Submit Arrow (Cyan Theme Primary) */}
             <button type="submit" className="send-circle-btn" title="Send Message (Enter)">
               <ArrowUp size={13} strokeWidth={2.5} />
             </button>

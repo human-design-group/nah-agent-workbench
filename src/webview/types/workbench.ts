@@ -1,4 +1,4 @@
-export type LayoutMode = 'grid' | 'vertical' | 'focus' | 'split-3' | 'columns-2';
+export type LayoutMode = 'grid' | 'vertical' | 'horizontal' | 'split-3' | 'focus';
 
 export type AgentStatus = 'online' | 'thinking' | 'idle' | 'error' | 'offline';
 
@@ -32,6 +32,19 @@ export interface AgentChatMessage {
   timestamp: string;
 }
 
+export interface AgentProjectSession {
+  id: string;
+  name: string;
+  updatedAt: string;
+}
+
+export interface AgentProject {
+  id: string;
+  name: string;
+  sessions: AgentProjectSession[];
+  totalSessions: number;
+}
+
 export interface AgentConfig {
   id: string;
   key: string;
@@ -45,15 +58,17 @@ export interface AgentConfig {
   permissionsMode: string;
   gitStatus: GitStatusInfo;
   messages: AgentChatMessage[];
+  projects?: AgentProject[];
+  scheduledTasks?: { id: string; name: string; cron: string; active: boolean }[];
 }
 
 export interface WorkbenchState {
   layoutMode: LayoutMode;
   agents: AgentConfig[];
-  panelSlots: string[]; // agent IDs in slot order
+  panelSlots: string[];
   panelSizes: number[];
   focusedAgentId: string | null;
-  voiceActive: boolean;
+  activeDrawerAgentId: string | null; // which agent's drawer is open
 }
 
 export type WebviewToHostMessage =
@@ -65,6 +80,7 @@ export type WebviewToHostMessage =
   | { type: 'NEW_SESSION'; payload: { agentId: string } }
   | { type: 'SWITCH_AGENT_SLOT'; payload: { slotIndex: number; newAgentKey: string } }
   | { type: 'REORDER_SLOTS'; payload: { sourceIndex: number; targetIndex: number } }
+  | { type: 'OPEN_NATIVE_APP'; payload: { agentId: string } }
   | { type: 'EXECUTE_COMMAND'; payload: { command: string } };
 
 export type HostToWebviewMessage =
