@@ -46,25 +46,25 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
   // Capitalize name cleanly
   const displayName = agent.name.charAt(0).toUpperCase() + agent.name.slice(1);
 
-  // Shorten worktree path for clean display
-  const shortWorktree = agent.gitStatus.worktree.split('/').pop() || agent.gitStatus.worktree;
-
   return (
     <header className="agent-header-wrapper">
       {/* Row 1: Identity + Session + Actions */}
       <div className="agent-top-header">
         <div className="agent-title-group">
-          {/* Hamburger Menu for fly-in drawer */}
+          {/* Drag Handle on the far left */}
+          <div className="drag-handle-container" title="Drag to reposition panel">
+            <GripVertical size={13} className="drag-handle-icon text-muted" />
+          </div>
+
+          {/* Hamburger Menu for fly-in drawer right of drag handle */}
           <button
             type="button"
             className="hamburger-btn"
             onClick={onToggleDrawer}
             title="Open Native Agent Hub & History"
           >
-            <Menu size={14} />
+            <Menu size={13} />
           </button>
-
-          <GripVertical size={13} className="drag-handle-icon" title="Drag to reposition panel" />
 
           {/* Agent Switcher Dropdown */}
           <div className="agent-switcher-container" ref={agentMenuRef}>
@@ -76,7 +76,7 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
             >
               <span className="agent-title-text">{displayName}</span>
               <span className="status-dot-green" title="Active & Synchronized" />
-              <ChevronDown size={11} />
+              <ChevronDown size={11} className="text-muted" />
             </button>
 
             {showAgentMenu && (
@@ -102,7 +102,7 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
           </div>
         </div>
 
-        {/* Center: Session Pill */}
+        {/* Center: Session Pill (Full width / adaptive) */}
         <div className="header-center-controls" ref={sessionMenuRef}>
           <div
             className="session-pill-dropdown"
@@ -110,7 +110,7 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
             onClick={() => setShowSessionMenu(!showSessionMenu)}
           >
             <span className="session-pill-text">{agent.sessionName}</span>
-            <ChevronDown size={11} />
+            <ChevronDown size={11} className="text-muted flex-shrink-0" />
           </div>
 
           {showSessionMenu && (
@@ -128,6 +128,7 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
           )}
         </div>
 
+        {/* Header Right Actions */}
         <div className="header-actions">
           <button className="icon-button" onClick={onNewSession} title="New Session / Tab">
             <Plus size={14} />
@@ -156,7 +157,7 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
         </div>
       </div>
 
-      {/* Row 2: Workspace Context + Git Status + Fork */}
+      {/* Row 2: Workspace Context + Full Worktree + Git Status + Fork */}
       <div className="agent-context-bar">
         <div className="context-left">
           <div className="context-item" title={`Workspace: ${agent.gitStatus.workspace}`}>
@@ -164,22 +165,20 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
             <span className="context-text">{agent.gitStatus.workspace}</span>
           </div>
 
-          <div className="context-item" title={`Full Worktree: ${agent.gitStatus.worktree}`}>
+          <div className="context-item worktree-item" title={`Full Worktree: ${agent.gitStatus.worktree}`}>
             <GitBranch size={11} style={{ opacity: 0.8 }} />
-            <span className="context-text">{shortWorktree}</span>
+            <span className="context-text worktree-text">{agent.gitStatus.worktree}</span>
           </div>
 
-          {/* Git Stats (Primary 2 visible, all on hover) */}
+          {/* Git Stats (Adaptive display) */}
           <div
             className="git-stats"
             title={`Modified: ${agent.gitStatus.modified} | Staged: ${agent.gitStatus.staged} | Untracked: ${agent.gitStatus.untracked} | Divergence: ${agent.gitStatus.divergence}`}
           >
             <span className="stat-modified">*{agent.gitStatus.modified}</span>
             <span className="stat-staged">+{agent.gitStatus.staged}</span>
-            <span className="stat-hidden-hover">
-              <span className="stat-untracked">!{agent.gitStatus.untracked}</span>
-              <span className="stat-divergence">?{agent.gitStatus.divergence}</span>
-            </span>
+            <span className="stat-untracked">!{agent.gitStatus.untracked}</span>
+            <span className="stat-divergence">?{agent.gitStatus.divergence}</span>
           </div>
         </div>
 

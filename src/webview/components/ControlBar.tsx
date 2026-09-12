@@ -89,128 +89,132 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
         {/* Right: Controls Strip */}
         <div className="bar-right">
-          {/* Expanded Control Center Panel */}
+          {/* Standalone Add Agent Button (Expanded View) */}
           {isExpanded && (
-            <div className="expanded-controls-strip">
-              {/* Add Agent Dropdown */}
-              <div className="relative" ref={addAgentDropdownRef}>
-                <button
-                  className="btn-control-item"
-                  onClick={() => setIsAddAgentDropdownOpen(!isAddAgentDropdownOpen)}
-                  title="Add Agent to Workbench"
-                >
-                  <span>Add Agent to Workbench</span>
-                  <Plus size={13} className="text-cyan ml-1" />
-                </button>
-
-                {isAddAgentDropdownOpen && (
-                  <div className="layout-dropdown-menu add-agent-dropdown">
-                    <div className="dropdown-heading">Select Agent to Open</div>
-                    {availableAgents.map((agent) => {
-                      const isOpen = currentSlotKeys.includes(agent.key);
-                      return (
-                        <button
-                          key={agent.id}
-                          className={`dropdown-item ${isOpen ? 'active' : ''}`}
-                          onClick={() => {
-                            onAddAgent(agent.key);
-                            setIsAddAgentDropdownOpen(false);
-                          }}
-                        >
-                          <span style={{ textTransform: 'capitalize' }}>{agent.name}</span>
-                          <span className="text-muted" style={{ fontSize: '10px', marginLeft: 'auto' }}>
-                            ({agent.runtime})
-                          </span>
-                          {isOpen && <Check size={12} className="text-cyan ml-1" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Session Mode */}
+            <div className="relative" ref={addAgentDropdownRef}>
               <button
-                className="btn-control-item"
-                onClick={() => setIsSessionModalOpen(true)}
-                title="Configure Session Mode (Independent vs Team)"
+                className="btn-standalone"
+                onClick={() => setIsAddAgentDropdownOpen(!isAddAgentDropdownOpen)}
+                title="Add Agent to Workbench"
               >
-                <Users size={13} className="text-cyan mr-1" />
-                <span>Session Mode {sessionMode === 'team' ? '(Team)' : '(Ind)'}</span>
-                <ChevronDown size={12} className="ml-1" />
+                <span>Add Agent to Workbench</span>
+                <Plus size={13} className="text-cyan ml-1" />
               </button>
 
-              {/* Layout Dropdown */}
-              <div className="relative" ref={layoutDropdownRef}>
-                <button
-                  className="btn-control-item"
-                  onClick={() => setIsLayoutDropdownOpen(!isLayoutDropdownOpen)}
-                  title="Select Layout Mode"
-                >
-                  <LayoutGrid size={13} className="text-cyan mr-1" />
-                  <span>Layout</span>
-                  <ChevronDown size={12} className="ml-1" />
-                </button>
-
-                {isLayoutDropdownOpen && (
-                  <div className="layout-dropdown-menu">
-                    {layouts.map(l => (
+              {isAddAgentDropdownOpen && (
+                <div className="layout-dropdown-menu add-agent-dropdown">
+                  <div className="dropdown-heading">Select Agent to Open</div>
+                  {availableAgents.map((agent) => {
+                    const isOpen = currentSlotKeys.includes(agent.key);
+                    return (
                       <button
-                        key={l.id}
-                        className={`dropdown-item ${currentLayout === l.id ? 'active' : ''}`}
+                        key={agent.id}
+                        className={`dropdown-item ${isOpen ? 'active' : ''}`}
                         onClick={() => {
-                          onSelectLayout(l.id);
-                          setIsLayoutDropdownOpen(false);
+                          onAddAgent(agent.key);
+                          setIsAddAgentDropdownOpen(false);
                         }}
                       >
-                        {l.icon}
-                        <span>{l.label}</span>
+                        <span style={{ textTransform: 'capitalize' }}>{agent.name}</span>
+                        <span className="text-muted" style={{ fontSize: '10px', marginLeft: 'auto' }}>
+                          ({agent.runtime})
+                        </span>
+                        {isOpen && <Check size={12} className="text-cyan ml-1" />}
                       </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Focus Mode Toggle */}
-              <button
-                className={`btn-control-item ${currentLayout === 'focus' ? 'active-cyan' : ''}`}
-                onClick={() => onSelectLayout(currentLayout === 'focus' ? 'vertical' : 'focus')}
-                title="Toggle Focus Mode"
-              >
-                <span>Focus Mode</span>
-                <Maximize2 size={13} className="text-cyan ml-1" />
-              </button>
-
-              {/* Reload Button */}
-              <button
-                className="btn-control-item"
-                onClick={onReload}
-                title="Reload Workbench & Sync Agents"
-              >
-                <span>Reload</span>
-                <RefreshCw size={13} className="text-cyan ml-1" />
-              </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Control Center Toggle Button */}
+          {/* Encompassed Control Center Box (Figma 2023:4609) */}
+          <div className={`control-center-encompassed ${isExpanded ? 'is-open' : ''}`}>
+            {isExpanded && (
+              <div className="encompassed-inner-controls">
+                {/* Session Mode */}
+                <button
+                  className="btn-encompassed-item"
+                  onClick={() => setIsSessionModalOpen(true)}
+                  title="Configure Session Mode (Independent vs Team)"
+                >
+                  <Users size={12} className="text-cyan mr-1" />
+                  <span>Session Mode {sessionMode === 'team' ? '(Team)' : '(Ind)'}</span>
+                  <ChevronDown size={11} className="ml-1 text-cyan" />
+                </button>
+
+                {/* Layout Dropdown */}
+                <div className="relative" ref={layoutDropdownRef}>
+                  <button
+                    className="btn-encompassed-item"
+                    onClick={() => setIsLayoutDropdownOpen(!isLayoutDropdownOpen)}
+                    title="Select Layout Mode"
+                  >
+                    <LayoutGrid size={12} className="text-cyan mr-1" />
+                    <span>Layout</span>
+                    <ChevronDown size={11} className="ml-1 text-cyan" />
+                  </button>
+
+                  {isLayoutDropdownOpen && (
+                    <div className="layout-dropdown-menu">
+                      {layouts.map((l) => (
+                        <button
+                          key={l.id}
+                          className={`dropdown-item ${currentLayout === l.id ? 'active' : ''}`}
+                          onClick={() => {
+                            onSelectLayout(l.id);
+                            setIsLayoutDropdownOpen(false);
+                          }}
+                        >
+                          {l.icon}
+                          <span>{l.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Focus Mode Toggle */}
+                <button
+                  className={`btn-encompassed-item ${currentLayout === 'focus' ? 'active-cyan' : ''}`}
+                  onClick={() => onSelectLayout(currentLayout === 'focus' ? 'vertical' : 'focus')}
+                  title="Toggle Focus Mode"
+                >
+                  <span>Focus Mode</span>
+                  <Maximize2 size={12} className="text-cyan ml-1" />
+                </button>
+              </div>
+            )}
+
+            {/* Toggle Button for Control Center */}
+            <button
+              className="btn-control-center-toggle"
+              onClick={() => setIsExpanded(!isExpanded)}
+              title="Toggle Control Center Toolbar"
+            >
+              <Sliders size={13} className="text-cyan mr-1" />
+              <span>Control Center</span>
+            </button>
+          </div>
+
+          {/* Standalone Reload Button */}
           <button
-            className={`btn-control-center ${isExpanded ? 'active' : ''}`}
-            onClick={() => setIsExpanded(!isExpanded)}
-            title="Toggle Control Center Toolbar"
+            className="btn-standalone"
+            onClick={onReload}
+            title="Reload Workbench & Sync Agents"
           >
-            <Sliders size={14} className="control-icon" />
-            <span>Control Center</span>
+            <span>Reload</span>
+            <RefreshCw size={13} className="text-cyan ml-1" />
           </button>
 
-          {/* More Options Button */}
+          {/* Standalone More Options Button */}
           <div className="relative" ref={moreMenuRef}>
             <button
-              className="btn-more-options"
+              className="btn-standalone-more"
               onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
               title="Extension Settings & Remote Control"
             >
-              <MoreVertical size={16} />
+              <MoreVertical size={15} />
             </button>
 
             <ExtensionMoreMenu

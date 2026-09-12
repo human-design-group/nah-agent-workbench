@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AgentConfig } from '../types/workbench';
-import { PlusCircle, ChevronDown, ChevronRight, Circle, ArrowUp, Mic, Check, Copy, Terminal, Cpu } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Circle, ArrowUp, Mic, Check, Copy, Terminal, Cpu } from 'lucide-react';
 import { AddContextMenu } from './AddContextMenu';
 import { useClickOutside } from '../hooks/useClickOutside';
 
@@ -92,11 +92,6 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
 
   const PERMS = ['Supervised', 'Auto-Approve', 'Autonomous', 'Sandbox'];
 
-  // Shorten model label for display if too long
-  const shortModel = agent.selectedModel.length > 18
-    ? agent.selectedModel.replace('OmniRoute - ', '').slice(0, 16) + '...'
-    : agent.selectedModel;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
       {/* Chat Messages Viewport */}
@@ -176,14 +171,15 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
 
         <div className="composer-toolbar">
           <div className="composer-controls-left">
+            {/* Sized-matched Add Context button (Matches Send button dimensions) */}
             <div className="relative" ref={addContextMenuRef}>
               <button
                 type="button"
-                className="icon-button"
+                className="btn-add-context-circle"
                 onClick={() => setShowAddContextMenu(!showAddContextMenu)}
                 title="Add Media and Context (+)"
               >
-                <PlusCircle size={15} color="#38bdf8" />
+                <Plus size={14} strokeWidth={2.5} />
               </button>
 
               <AddContextMenu
@@ -201,7 +197,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
                 onClick={() => setShowPermsMenu(!showPermsMenu)}
               >
                 <span>Permissions</span>
-                <ChevronDown size={10} />
+                <ChevronDown size={10} className="text-muted" />
               </div>
               {showPermsMenu && (
                 <div className="pill-dropdown-menu">
@@ -222,16 +218,16 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
               )}
             </div>
 
-            {/* Model Selector Pill */}
-            <div className="dropdown-pill-wrapper" ref={modelMenuRef}>
+            {/* Model Selector Pill (Full width / adaptive) */}
+            <div className="dropdown-pill-wrapper model-pill-wrapper" ref={modelMenuRef}>
               <div
-                className="control-pill"
+                className="control-pill model-control-pill"
                 title={`Full Model: ${agent.selectedModel}`}
                 onClick={() => setShowModelMenu(!showModelMenu)}
               >
-                <Circle size={8} color="#38bdf8" />
-                <span>{shortModel}</span>
-                <ChevronDown size={10} />
+                <Circle size={7} color="#38bdf8" fill="#38bdf8" className="flex-shrink-0" />
+                <span className="model-name-text">{agent.selectedModel}</span>
+                <ChevronDown size={10} className="text-muted flex-shrink-0" />
               </div>
               {showModelMenu && (
                 <div className="pill-dropdown-menu model-dropdown">
@@ -267,7 +263,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
 
             {/* Submit Arrow (Cyan Theme Primary) */}
             <button type="submit" className="send-circle-btn" title="Send Message (Enter)">
-              <ArrowUp size={13} strokeWidth={2.5} />
+              <ArrowUp size={14} strokeWidth={2.5} />
             </button>
           </div>
         </div>
