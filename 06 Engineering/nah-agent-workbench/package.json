@@ -1,0 +1,96 @@
+{
+  "name": "nah-workbench",
+  "displayName": "notahuman Agent Workbench",
+  "description": "Unified Multi-Agent Mission Control & Responsive Grid for Cursor and VS Code (AgentOS Prototype)",
+  "version": "0.1.0",
+  "publisher": "notahuman",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "AI",
+    "Chat",
+    "Other"
+  ],
+  "keywords": [
+    "agent",
+    "multi-agent",
+    "workbench",
+    "notahuman",
+    "antigravity",
+    "openclaw",
+    "opencode",
+    "hermes",
+    "acp"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onCommand:nah.openWorkbench"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "nah.openWorkbench",
+        "title": "notahuman: Open Multi-Agent Workbench",
+        "category": "notahuman",
+        "icon": "$(layout-grid)"
+      },
+      {
+        "command": "nah.resetWorkbenchLayout",
+        "title": "notahuman: Reset Workbench Layout",
+        "category": "notahuman"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "nah.openWorkbench",
+        "key": "cmd+alt+n",
+        "mac": "cmd+alt+n"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "nah.openWorkbench"
+        },
+        {
+          "command": "nah.resetWorkbenchLayout"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "notahuman Workbench",
+      "properties": {
+        "nahWorkbench.defaultLayout": {
+          "type": "string",
+          "enum": ["vertical", "horizontal", "grid"],
+          "default": "vertical",
+          "description": "Default multi-agent layout mode"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "package": "node build.mjs && npx @vscode/vsce package --no-dependencies -o dist/nah-workbench-0.1.0.vsix",
+    "install-ext": "npm run package && cursor --install-extension dist/nah-workbench-0.1.0.vsix --force"
+  },
+  "dependencies": {
+    "lucide-react": "^0.475.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-resizable-panels": "^2.1.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.0"
+  }
+}

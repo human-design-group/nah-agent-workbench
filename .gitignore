@@ -1,0 +1,32 @@
+# ---- secrets: NEVER commit. Values live in nah-nexus, referenced by tag ----
+.env
+.env.*
+.dev.vars
+*.key
+*.pem
+*.p8
+*.keystore
+secrets/
+# ---- build / deps ----
+node_modules/
+dist/
+build/
+.next/
+.astro/
+.wrangler/
+out/
+# ---- per-project graph cache (keep graphify-out/ outputs; ignore caches) ----
+.graphify_*
+# ---- os / editor / icloud ----
+.DS_Store
+*.icloud
+.Trash*
+# ---- heavy binaries (brand source-of-truth lives in brand-assets, referenced) --
+*.psd
+*.ai
+*.indd
+*.aep
+*.sketch
+*.mp4
+*.mov
+*.zip
