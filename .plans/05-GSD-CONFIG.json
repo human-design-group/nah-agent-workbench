@@ -1,0 +1,16 @@
+{
+  "project": "nah-agent-workbench",
+  "version": "1.0.0",
+  "frameworks": {
+    "gsd": "1.10.0",
+    "superpowers": "6.3.0",
+    "gstack": "1.75.0"
+  },
+  "activeMilestone": "M1-Visual-Precision-Figma-Alignment",
+  "supervisors": ["Astro", "Uno"],
+  "workerAgents": ["Curso", "Omo", "Humano"],
+  "git": {
+    "repo": "https://github.com/human-design-group/nah-agent-workbench",
+    "mainBranch": "main"
+  }
+}
