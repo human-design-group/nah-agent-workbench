@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { AgentConfig } from '../types/workbench';
-import { Plus, ChevronDown, ChevronRight, Circle, ArrowUp, Mic, Check, Copy, Terminal, Cpu } from 'lucide-react';
+import { AgentConfig, AttachedContextItem } from '../types/workbench';
+import { Plus, ChevronDown, ChevronRight, Circle, ArrowUp, Mic, Check, Copy, Terminal, Cpu, X, FileText, GitCommit } from 'lucide-react';
 import { AddContextMenu } from './AddContextMenu';
 import { useClickOutside } from '../hooks/useClickOutside';
 
@@ -9,6 +9,8 @@ interface AgentChatViewProps {
   onSendMessage: (text: string, attachments?: any[]) => void;
   onSelectModel: (model: string) => void;
   onSelectPermissions: (mode: string) => void;
+  onAttachContext?: (type: 'file' | 'git-diff' | 'terminal') => void;
+  onRemoveContext?: (itemId: string) => void;
 }
 
 export const AgentChatView: React.FC<AgentChatViewProps> = ({
@@ -16,6 +18,8 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
   onSendMessage,
   onSelectModel,
   onSelectPermissions,
+  onAttachContext,
+  onRemoveContext,
 }) => {
   const [inputText, setInputText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -44,8 +48,8 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
-    onSendMessage(inputText);
+    if (!inputText.trim() && (!agent.attachedContext || agent.attachedContext.length === 0)) return;
+    onSendMessage(inputText || 'Process attached context files and instructions.', agent.attachedContext);
     setInputText('');
   };
 
@@ -67,14 +71,15 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
   };
 
   const handleSelectContext = (type: string, detail?: string) => {
-    if (type === 'media') {
-      setInputText((prev) => prev + (prev ? ' ' : '') + '[Media Attachment: image.png]');
-    } else if (type === 'file') {
-      setInputText((prev) => prev + (prev ? ' ' : '') + '@file:');
+    setShowAddContextMenu(false);
+    if (type === 'file') {
+      if (onAttachContext) onAttachContext('file');
+    } else if (type === 'git' || type === 'git-diff') {
+      if (onAttachContext) onAttachContext('git-diff');
+    } else if (type === 'terminal') {
+      if (onAttachContext) onAttachContext('terminal');
     } else if (type === 'skill') {
       setInputText((prev) => prev + (prev ? ' ' : '') + `Use skill /${detail || 'nah-figma'} `);
-    } else if (type === 'connector') {
-      setInputText((prev) => prev + (prev ? ' ' : '') + `Query connector: ${detail} `);
     } else if (type === 'actions') {
       setInputText((prev) => prev + (prev ? ' ' : '') + '/');
     } else if (type === 'websearch') {
@@ -83,14 +88,18 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
   };
 
   const MODELS = [
-    'OmniRoute - Uno Orchestrate',
-    'OmniRoute - Omo Production',
-    'Gemini 2.5 Flash',
-    'Claude 3.7 Sonnet',
-    'DeepSeek-R1 (Bifrost)'
+    'curso-production',
+    'uno-production',
+    'omo-production',
+    'humano-assistant',
+    'opencode-go/deepseek-v4-pro',
+    'bedrock/amazon.nova-pro-v1:0',
+    'bedrock/mistral.mistral-large-3-675b-instruct',
+    'bedrock/moonshotai.kimi-k2.5',
+    'bedrock/qwen.qwen3-coder-next',
   ];
 
-  const PERMS = ['Supervised', 'Auto-Approve', 'Autonomous', 'Sandbox'];
+  const PERMS = ['Autonomous', 'Supervised', 'Auto-Approve', 'Sandbox'];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
@@ -158,6 +167,59 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
 
       {/* Composer Input Block */}
       <form className="agent-composer-container" onSubmit={handleSubmit}>
+        {/* Attached Context Chips Bar */}
+        {agent.attachedContext && agent.attachedContext.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 6,
+              padding: '6px 12px',
+              borderBottom: '1px solid #1f2023',
+              backgroundColor: '#121316',
+            }}
+          >
+            {agent.attachedContext.map((item: AttachedContextItem) => (
+              <div
+                key={item.id}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  backgroundColor: '#1c1d21',
+                  border: '1px solid #27282b',
+                  fontSize: 11,
+                  color: '#58a6ff',
+                }}
+              >
+                {item.type === 'git-diff' ? <GitCommit size={12} /> : <FileText size={12} />}
+                <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {item.title}
+                </span>
+                {onRemoveContext && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveContext(item.id)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#8b949e',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: 0,
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="composer-input-row">
           <input
             type="text"
@@ -171,7 +233,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
 
         <div className="composer-toolbar">
           <div className="composer-controls-left">
-            {/* Sized-matched Add Context button (Matches Send button dimensions) */}
+            {/* Add Context button */}
             <div className="relative" ref={addContextMenuRef}>
               <button
                 type="button"
@@ -218,11 +280,11 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
               )}
             </div>
 
-            {/* Model Selector Pill (Full width / adaptive) */}
+            {/* Model Selector Pill */}
             <div className="dropdown-pill-wrapper model-pill-wrapper" ref={modelMenuRef}>
               <div
                 className="control-pill model-control-pill"
-                title={`Full Model: ${agent.selectedModel}`}
+                title={`Selected Model: ${agent.selectedModel}`}
                 onClick={() => setShowModelMenu(!showModelMenu)}
               >
                 <Circle size={7} color="#38bdf8" fill="#38bdf8" className="flex-shrink-0" />
@@ -251,7 +313,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
           </div>
 
           <div className="composer-controls-right">
-            {/* Voice Input Button with Microphone Icon */}
+            {/* Voice Input Button */}
             <button
               type="button"
               className={`icon-button voice-btn ${isRecording ? 'voice-active' : ''}`}
@@ -261,7 +323,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
               <Mic size={14} color={isRecording ? '#38bdf8' : '#94a3b8'} />
             </button>
 
-            {/* Submit Arrow (Cyan Theme Primary) */}
+            {/* Submit Button */}
             <button type="submit" className="send-circle-btn" title="Send Message (Enter)">
               <ArrowUp size={14} strokeWidth={2.5} />
             </button>

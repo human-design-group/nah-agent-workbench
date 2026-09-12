@@ -1,145 +1,241 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PanelGroup, Panel } from 'react-resizable-panels';
-import { AgentConfig, LayoutMode } from '../types/workbench.js';
-import { AgentCard } from './AgentCard.js';
-import { ResizeHandle } from './ResizeHandle.js';
+import { AgentConfig, LayoutMode } from '../types/workbench';
+import { AgentCard } from './AgentCard';
+import { ResizeHandle } from './ResizeHandle';
+import { Plus } from 'lucide-react';
 
 interface GridContainerProps {
   layoutMode: LayoutMode;
   agents: AgentConfig[];
-  onSendMessage: (agentId: string, text: string) => void;
+  slotKeys: string[];
+  onSwitchSlot: (slotIndex: number, newAgentKey: string) => void;
+  onSendMessage: (agentId: string, text: string, attachments?: any[]) => void;
   onSelectModel: (agentId: string, model: string) => void;
   onSelectPermissions: (agentId: string, mode: string) => void;
+  onAttachContext?: (agentId: string, type: 'file' | 'git-diff' | 'terminal') => void;
+  onRemoveContext?: (agentId: string, itemId: string) => void;
   onForkSession: (agentId: string) => void;
   onNewSession: (agentId: string) => void;
+  onFindInSession?: (agentId: string) => void;
+  onExportSession?: (agentId: string) => void;
+  onDuplicateSession?: (agentId: string) => void;
+  onClearSession?: (agentId: string) => void;
+  onClosePanel?: (agentId: string) => void;
+  onAddAgentClick?: () => void;
 }
 
 export const GridContainer: React.FC<GridContainerProps> = ({
   layoutMode,
   agents,
+  slotKeys,
+  onSwitchSlot,
   onSendMessage,
   onSelectModel,
   onSelectPermissions,
+  onAttachContext,
+  onRemoveContext,
   onForkSession,
   onNewSession,
+  onFindInSession,
+  onExportSession,
+  onDuplicateSession,
+  onClearSession,
+  onClosePanel,
+  onAddAgentClick,
 }) => {
-  const humano = agents.find((a) => a.key === 'humano') || agents[0];
-  const uno = agents.find((a) => a.key === 'uno') || agents[1] || agents[0];
-  const omo = agents.find((a) => a.key === 'omo') || agents[2] || agents[0];
-  const astro = agents.find((a) => a.key === 'astro') || agents[3] || agents[0];
+  const [focusedSlot, setFocusedSlot] = useState<number>(0);
+  const allAgentsList = agents.map((a) => ({ key: a.key, name: a.name, runtime: a.runtime }));
 
-  // 1. Vertical 1x4 Layout (Frame 2011:2051 in Figma)
-  if (layoutMode === 'vertical') {
+  const getAgentForSlot = (slotIdx: number): AgentConfig => {
+    const key = slotKeys[slotIdx];
+    return agents.find((a) => a.key === key) || agents.find((a) => a.id === key) || agents[0];
+  };
+
+  const renderCard = (slotIdx: number) => {
+    const agent = getAgentForSlot(slotIdx);
+    if (!agent) return null;
+
+    return (
+      <AgentCard
+        agent={agent}
+        allAgents={allAgentsList}
+        isFocused={focusedSlot === slotIdx}
+        onFocus={() => setFocusedSlot(slotIdx)}
+        onSwitchAgent={(newKey) => onSwitchSlot(slotIdx, newKey)}
+        onSendMessage={(text, attachments) => onSendMessage(agent.id, text, attachments)}
+        onSelectModel={(model) => onSelectModel(agent.id, model)}
+        onSelectPermissions={(mode) => onSelectPermissions(agent.id, mode)}
+        onAttachContext={(type) => onAttachContext && onAttachContext(agent.id, type)}
+        onRemoveContext={(itemId) => onRemoveContext && onRemoveContext(agent.id, itemId)}
+        onFork={() => onForkSession(agent.id)}
+        onNewSession={() => onNewSession(agent.id)}
+        onFindInSession={onFindInSession}
+        onExportSession={onExportSession}
+        onDuplicateSession={onDuplicateSession}
+        onClearSession={onClearSession}
+        onClosePanel={onClosePanel}
+      />
+    );
+  };
+
+  // Empty state if all slots closed
+  if (!slotKeys || slotKeys.length === 0) {
+    return (
+      <div className="grid-stage empty-stage">
+        <div className="empty-state-card">
+          <h3>No Active Agent Panels</h3>
+          <p>Add an agent to start collaborating across the workbench.</p>
+          <button className="btn-go" onClick={onAddAgentClick}>
+            <Plus size={14} />
+            <span>Add Agent</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 1. Single Agent Focus Mode (1x1)
+  if (layoutMode === 'focus') {
+    const safeSlot = focusedSlot < slotKeys.length ? focusedSlot : 0;
+    return (
+      <div className="grid-stage">
+        {renderCard(safeSlot)}
+      </div>
+    );
+  }
+
+  // 2. Horizontal Stack Mode (Stacked vertical rows)
+  if (layoutMode === 'horizontal') {
+    const count = slotKeys.length;
+    const defaultSize = 100 / count;
+    return (
+      <div className="grid-stage">
+        <PanelGroup direction="vertical">
+          {slotKeys.map((key, idx) => (
+            <React.Fragment key={`horiz-${key}-${idx}`}>
+              <Panel defaultSize={defaultSize} minSize={15}>
+                {renderCard(idx)}
+              </Panel>
+              {idx < count - 1 && <ResizeHandle direction="horizontal" />}
+            </React.Fragment>
+          ))}
+        </PanelGroup>
+      </div>
+    );
+  }
+
+  // 3. 3-Column Split Mode (Up to 3 columns)
+  if (layoutMode === 'split-3') {
+    const visibleSlots = slotKeys.slice(0, 3);
+    const count = visibleSlots.length;
+    const defaultSize = 100 / count;
     return (
       <div className="grid-stage">
         <PanelGroup direction="horizontal">
-          <Panel defaultSize={25} minSize={15}>
-            <AgentCard
-              agent={humano}
-              onSendMessage={(text) => onSendMessage(humano.id, text)}
-              onSelectModel={(model) => onSelectModel(humano.id, model)}
-              onSelectPermissions={(mode) => onSelectPermissions(humano.id, mode)}
-              onFork={() => onForkSession(humano.id)}
-              onNewSession={() => onNewSession(humano.id)}
-            />
-          </Panel>
-          <ResizeHandle direction="vertical" />
+          {visibleSlots.map((key, idx) => (
+            <React.Fragment key={`split3-${key}-${idx}`}>
+              <Panel defaultSize={defaultSize} minSize={20}>
+                {renderCard(idx)}
+              </Panel>
+              {idx < count - 1 && <ResizeHandle direction="vertical" />}
+            </React.Fragment>
+          ))}
+        </PanelGroup>
+      </div>
+    );
+  }
 
-          <Panel defaultSize={25} minSize={15}>
-            <AgentCard
-              agent={uno}
-              onSendMessage={(text) => onSendMessage(uno.id, text)}
-              onSelectModel={(model) => onSelectModel(uno.id, model)}
-              onSelectPermissions={(mode) => onSelectPermissions(uno.id, mode)}
-              onFork={() => onForkSession(uno.id)}
-              onNewSession={() => onNewSession(uno.id)}
-            />
-          </Panel>
-          <ResizeHandle direction="vertical" />
+  // 4. Vertical Mode (Columns side by side)
+  if (layoutMode === 'vertical') {
+    const count = slotKeys.length;
+    const defaultSize = 100 / count;
+    return (
+      <div className="grid-stage">
+        <PanelGroup direction="horizontal">
+          {slotKeys.map((key, idx) => (
+            <React.Fragment key={`vert-${key}-${idx}`}>
+              <Panel defaultSize={defaultSize} minSize={15}>
+                {renderCard(idx)}
+              </Panel>
+              {idx < count - 1 && <ResizeHandle direction="vertical" />}
+            </React.Fragment>
+          ))}
+        </PanelGroup>
+      </div>
+    );
+  }
 
-          <Panel defaultSize={25} minSize={15}>
-            <AgentCard
-              agent={omo}
-              onSendMessage={(text) => onSendMessage(omo.id, text)}
-              onSelectModel={(model) => onSelectModel(omo.id, model)}
-              onSelectPermissions={(mode) => onSelectPermissions(omo.id, mode)}
-              onFork={() => onForkSession(omo.id)}
-              onNewSession={() => onNewSession(omo.id)}
-            />
-          </Panel>
-          <ResizeHandle direction="vertical" />
+  // 5. 2x2 Grid Layout
+  const count = slotKeys.length;
+  if (count <= 2) {
+    const defaultSize = 100 / count;
+    return (
+      <div className="grid-stage">
+        <PanelGroup direction="horizontal">
+          {slotKeys.map((key, idx) => (
+            <React.Fragment key={`grid-${key}-${idx}`}>
+              <Panel defaultSize={defaultSize} minSize={20}>
+                {renderCard(idx)}
+              </Panel>
+              {idx < count - 1 && <ResizeHandle direction="vertical" />}
+            </React.Fragment>
+          ))}
+        </PanelGroup>
+      </div>
+    );
+  }
 
-          <Panel defaultSize={25} minSize={15}>
-            <AgentCard
-              agent={astro}
-              onSendMessage={(text) => onSendMessage(astro.id, text)}
-              onSelectModel={(model) => onSelectModel(astro.id, model)}
-              onSelectPermissions={(mode) => onSelectPermissions(astro.id, mode)}
-              onFork={() => onForkSession(astro.id)}
-              onNewSession={() => onNewSession(astro.id)}
-            />
+  if (count === 3) {
+    return (
+      <div className="grid-stage">
+        <PanelGroup direction="vertical">
+          <Panel defaultSize={50} minSize={25}>
+            <PanelGroup direction="horizontal">
+              <Panel defaultSize={50} minSize={20}>
+                {renderCard(0)}
+              </Panel>
+              <ResizeHandle direction="vertical" />
+              <Panel defaultSize={50} minSize={20}>
+                {renderCard(1)}
+              </Panel>
+            </PanelGroup>
+          </Panel>
+          <ResizeHandle direction="horizontal" />
+          <Panel defaultSize={50} minSize={25}>
+            {renderCard(2)}
           </Panel>
         </PanelGroup>
       </div>
     );
   }
 
-  // 2. 2x2 Grid Layout (Frame 2001:213 in Figma)
+  // 4 or more: 2x2 grid
   return (
     <div className="grid-stage">
       <PanelGroup direction="vertical">
-        {/* Top Row: Humano + Uno */}
         <Panel defaultSize={50} minSize={25}>
           <PanelGroup direction="horizontal">
             <Panel defaultSize={50} minSize={20}>
-              <AgentCard
-                agent={humano}
-                onSendMessage={(text) => onSendMessage(humano.id, text)}
-                onSelectModel={(model) => onSelectModel(humano.id, model)}
-                onSelectPermissions={(mode) => onSelectPermissions(humano.id, mode)}
-                onFork={() => onForkSession(humano.id)}
-                onNewSession={() => onNewSession(humano.id)}
-              />
+              {renderCard(0)}
             </Panel>
             <ResizeHandle direction="vertical" />
             <Panel defaultSize={50} minSize={20}>
-              <AgentCard
-                agent={uno}
-                onSendMessage={(text) => onSendMessage(uno.id, text)}
-                onSelectModel={(model) => onSelectModel(uno.id, model)}
-                onSelectPermissions={(mode) => onSelectPermissions(uno.id, mode)}
-                onFork={() => onForkSession(uno.id)}
-                onNewSession={() => onNewSession(uno.id)}
-              />
+              {renderCard(1)}
             </Panel>
           </PanelGroup>
         </Panel>
 
         <ResizeHandle direction="horizontal" />
 
-        {/* Bottom Row: Omo + Astro */}
         <Panel defaultSize={50} minSize={25}>
           <PanelGroup direction="horizontal">
             <Panel defaultSize={50} minSize={20}>
-              <AgentCard
-                agent={omo}
-                onSendMessage={(text) => onSendMessage(omo.id, text)}
-                onSelectModel={(model) => onSelectModel(omo.id, model)}
-                onSelectPermissions={(mode) => onSelectPermissions(omo.id, mode)}
-                onFork={() => onForkSession(omo.id)}
-                onNewSession={() => onNewSession(omo.id)}
-              />
+              {renderCard(2)}
             </Panel>
             <ResizeHandle direction="vertical" />
             <Panel defaultSize={50} minSize={20}>
-              <AgentCard
-                agent={astro}
-                onSendMessage={(text) => onSendMessage(astro.id, text)}
-                onSelectModel={(model) => onSelectModel(astro.id, model)}
-                onSelectPermissions={(mode) => onSelectPermissions(astro.id, mode)}
-                onFork={() => onForkSession(astro.id)}
-                onNewSession={() => onNewSession(astro.id)}
-              />
+              {renderCard(3)}
             </Panel>
           </PanelGroup>
         </Panel>
