@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { AgentConfig } from '../types/workbench';
 import { Menu, ChevronDown, Plus, MoreVertical, Folder, GitBranch, GripVertical, Check } from 'lucide-react';
 import { AgentOptionsMenu } from './AgentOptionsMenu';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface AgentHeaderProps {
   agent: AgentConfig;
@@ -34,6 +35,14 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
   const [showSessionMenu, setShowSessionMenu] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
 
+  const agentMenuRef = useRef<HTMLDivElement>(null);
+  const sessionMenuRef = useRef<HTMLDivElement>(null);
+  const optionsMenuRef = useRef<HTMLDivElement>(null);
+
+  useClickOutside(agentMenuRef, () => setShowAgentMenu(false), showAgentMenu);
+  useClickOutside(sessionMenuRef, () => setShowSessionMenu(false), showSessionMenu);
+  useClickOutside(optionsMenuRef, () => setShowOptionsMenu(false), showOptionsMenu);
+
   // Capitalize name cleanly
   const displayName = agent.name.charAt(0).toUpperCase() + agent.name.slice(1);
 
@@ -58,7 +67,7 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
           <GripVertical size={13} className="drag-handle-icon" title="Drag to reposition panel" />
 
           {/* Agent Switcher Dropdown */}
-          <div className="agent-switcher-container">
+          <div className="agent-switcher-container" ref={agentMenuRef}>
             <button
               type="button"
               className="agent-name-btn"
@@ -94,7 +103,7 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
         </div>
 
         {/* Center: Session Pill */}
-        <div className="header-center-controls">
+        <div className="header-center-controls" ref={sessionMenuRef}>
           <div
             className="session-pill-dropdown"
             title={`Full Session: ${agent.sessionName} (${agent.sessionId})`}
@@ -124,7 +133,7 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
             <Plus size={14} />
           </button>
           
-          <div className="relative">
+          <div className="relative" ref={optionsMenuRef}>
             <button
               className="icon-button"
               onClick={() => setShowOptionsMenu(!showOptionsMenu)}

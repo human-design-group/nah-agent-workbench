@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AgentConfig } from '../types/workbench';
 import { PlusCircle, ChevronDown, ChevronRight, Circle, ArrowUp, Mic, Check, Copy, Terminal, Cpu } from 'lucide-react';
 import { AddContextMenu } from './AddContextMenu';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface AgentChatViewProps {
   agent: AgentConfig;
@@ -24,6 +25,14 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
   const [showPermsMenu, setShowPermsMenu] = useState(false);
   const [showAddContextMenu, setShowAddContextMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const addContextMenuRef = useRef<HTMLDivElement>(null);
+  const permsMenuRef = useRef<HTMLDivElement>(null);
+  const modelMenuRef = useRef<HTMLDivElement>(null);
+
+  useClickOutside(addContextMenuRef, () => setShowAddContextMenu(false), showAddContextMenu);
+  useClickOutside(permsMenuRef, () => setShowPermsMenu(false), showPermsMenu);
+  useClickOutside(modelMenuRef, () => setShowModelMenu(false), showModelMenu);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -167,7 +176,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
 
         <div className="composer-toolbar">
           <div className="composer-controls-left">
-            <div className="relative">
+            <div className="relative" ref={addContextMenuRef}>
               <button
                 type="button"
                 className="icon-button"
@@ -185,7 +194,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
             </div>
 
             {/* Permissions Pill */}
-            <div className="dropdown-pill-wrapper">
+            <div className="dropdown-pill-wrapper" ref={permsMenuRef}>
               <div
                 className="control-pill"
                 title={`Permissions Mode: ${agent.permissionsMode}`}
@@ -214,7 +223,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
             </div>
 
             {/* Model Selector Pill */}
-            <div className="dropdown-pill-wrapper">
+            <div className="dropdown-pill-wrapper" ref={modelMenuRef}>
               <div
                 className="control-pill"
                 title={`Full Model: ${agent.selectedModel}`}

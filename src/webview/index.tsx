@@ -11,6 +11,7 @@ const App: React.FC = () => {
     setLayoutMode,
     setSessionMode,
     switchAgentSlot,
+    addAgentSlot,
     setAgentModel,
     setAgentPermissions,
     sendMessageToAgent,
@@ -33,6 +34,7 @@ const App: React.FC = () => {
         teamConfig={state.teamConfig}
         onApplySessionMode={setSessionMode}
         availableAgents={state.agents}
+        currentSlotKeys={state.panelSlots}
         remoteInfo={state.remoteInfo}
         onReload={reloadWorkbench}
         onOpenSettings={() => console.log('Open settings')}
@@ -40,9 +42,7 @@ const App: React.FC = () => {
         onFindInSession={() => findInSession()}
         onDuplicateSession={() => duplicateSession()}
         onCopyRemoteUrl={copyRemoteUrl}
-        onAddAgent={() => {
-          console.log('Add agent to workbench');
-        }}
+        onAddAgent={(key) => addAgentSlot(key)}
       />
       <GridContainer
         layoutMode={state.layoutMode}
@@ -59,6 +59,7 @@ const App: React.FC = () => {
         onDuplicateSession={duplicateSession}
         onClearSession={(agentId) => console.log('Clear session for', agentId)}
         onClosePanel={closeAgentPanel}
+        onAddAgentClick={() => addAgentSlot('humano')}
       />
     </div>
   );

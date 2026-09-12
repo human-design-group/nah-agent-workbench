@@ -269,6 +269,31 @@ export function useWorkbenchState() {
     });
   }, []);
 
+  const addAgentSlot = useCallback((agentKey: string) => {
+    setState((prev) => {
+      if (prev.panelSlots.includes(agentKey)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        panelSlots: [...prev.panelSlots, agentKey],
+      };
+    });
+  }, []);
+
+  const closeAgentPanel = useCallback((agentId: string) => {
+    setState((prev) => {
+      const agent = prev.agents.find(a => a.id === agentId);
+      if (!agent) return prev;
+      const newSlots = prev.panelSlots.filter(s => s !== agent.key);
+      return {
+        ...prev,
+        panelSlots: newSlots,
+      };
+    });
+    vscode.postMessage({ type: 'CLOSE_AGENT_PANEL', payload: { agentId } });
+  }, [vscode]);
+
   const setPanelSizes = useCallback((sizes: number[]) => {
     setState((prev) => ({
       ...prev,
@@ -317,7 +342,7 @@ export function useWorkbenchState() {
       payload: { agentId, text, attachments },
     });
 
-    // Simulate reactive ACP response
+    // Simulate reactive response
     setTimeout(() => {
       setState((prev) => ({
         ...prev,
@@ -366,19 +391,6 @@ export function useWorkbenchState() {
     vscode.postMessage({ type: 'FIND_IN_SESSION', payload: { agentId } });
   }, [vscode]);
 
-  const closeAgentPanel = useCallback((agentId: string) => {
-    setState((prev) => {
-      const agent = prev.agents.find(a => a.id === agentId);
-      if (!agent) return prev;
-      const newSlots = prev.panelSlots.filter(s => s !== agent.key);
-      return {
-        ...prev,
-        panelSlots: newSlots.length > 0 ? newSlots : ['humano'],
-      };
-    });
-    vscode.postMessage({ type: 'CLOSE_AGENT_PANEL', payload: { agentId } });
-  }, [vscode]);
-
   const copyRemoteUrl = useCallback((target: 'session' | 'workspace' | 'shareCode', agentId?: string) => {
     const info = state.remoteInfo;
     let textToCopy = '';
@@ -409,6 +421,8 @@ export function useWorkbenchState() {
     setLayoutMode,
     setSessionMode,
     switchAgentSlot,
+    addAgentSlot,
+    closeAgentPanel,
     setPanelSizes,
     setAgentModel,
     setAgentPermissions,
@@ -418,7 +432,6 @@ export function useWorkbenchState() {
     exportSession,
     duplicateSession,
     findInSession,
-    closeAgentPanel,
     copyRemoteUrl,
     reloadWorkbench,
     resetLayout,

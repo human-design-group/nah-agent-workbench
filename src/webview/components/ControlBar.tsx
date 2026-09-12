@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { LayoutMode, SessionMode, TeamConfig, RemoteShareInfo, AgentConfig } from '../types/workbench';
 import {
   Sliders,
@@ -12,11 +12,12 @@ import {
   Maximize2,
   RefreshCw,
   ChevronDown,
-  ShieldAlert,
-  Bot
+  Bot,
+  Check
 } from 'lucide-react';
 import { SessionModeModal } from './SessionModeModal';
 import { ExtensionMoreMenu } from './ExtensionMoreMenu';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface ControlBarProps {
   currentLayout: LayoutMode;
@@ -25,6 +26,7 @@ interface ControlBarProps {
   teamConfig?: TeamConfig;
   onApplySessionMode: (mode: SessionMode, config?: TeamConfig) => void;
   availableAgents: AgentConfig[];
+  currentSlotKeys: string[];
   remoteInfo?: RemoteShareInfo;
   onReload: () => void;
   onOpenSettings: () => void;
@@ -32,7 +34,7 @@ interface ControlBarProps {
   onFindInSession: () => void;
   onDuplicateSession: () => void;
   onCopyRemoteUrl: (target: 'session' | 'workspace' | 'shareCode') => void;
-  onAddAgent: () => void;
+  onAddAgent: (agentKey: string) => void;
 }
 
 export const ControlBar: React.FC<ControlBarProps> = ({
@@ -42,6 +44,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   teamConfig,
   onApplySessionMode,
   availableAgents,
+  currentSlotKeys,
   remoteInfo,
   onReload,
   onOpenSettings,
@@ -55,6 +58,15 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isLayoutDropdownOpen, setIsLayoutDropdownOpen] = useState(false);
+  const [isAddAgentDropdownOpen, setIsAddAgentDropdownOpen] = useState(false);
+
+  const layoutDropdownRef = useRef<HTMLDivElement>(null);
+  const addAgentDropdownRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  useClickOutside(layoutDropdownRef, () => setIsLayoutDropdownOpen(false), isLayoutDropdownOpen);
+  useClickOutside(addAgentDropdownRef, () => setIsAddAgentDropdownOpen(false), isAddAgentDropdownOpen);
+  useClickOutside(moreMenuRef, () => setIsMoreMenuOpen(false), isMoreMenuOpen);
 
   const layouts: { id: LayoutMode; label: string; icon: React.ReactNode }[] = [
     { id: 'grid', label: 'Grid (2x2)', icon: <LayoutGrid size={13} /> },
@@ -80,15 +92,42 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           {/* Expanded Control Center Panel */}
           {isExpanded && (
             <div className="expanded-controls-strip">
-              {/* Add Agent */}
-              <button
-                className="btn-control-item"
-                onClick={onAddAgent}
-                title="Add Agent to Workbench"
-              >
-                <span>Add Agent to Workbench</span>
-                <Plus size={13} className="text-cyan ml-1" />
-              </button>
+              {/* Add Agent Dropdown */}
+              <div className="relative" ref={addAgentDropdownRef}>
+                <button
+                  className="btn-control-item"
+                  onClick={() => setIsAddAgentDropdownOpen(!isAddAgentDropdownOpen)}
+                  title="Add Agent to Workbench"
+                >
+                  <span>Add Agent to Workbench</span>
+                  <Plus size={13} className="text-cyan ml-1" />
+                </button>
+
+                {isAddAgentDropdownOpen && (
+                  <div className="layout-dropdown-menu add-agent-dropdown">
+                    <div className="dropdown-heading">Select Agent to Open</div>
+                    {availableAgents.map((agent) => {
+                      const isOpen = currentSlotKeys.includes(agent.key);
+                      return (
+                        <button
+                          key={agent.id}
+                          className={`dropdown-item ${isOpen ? 'active' : ''}`}
+                          onClick={() => {
+                            onAddAgent(agent.key);
+                            setIsAddAgentDropdownOpen(false);
+                          }}
+                        >
+                          <span style={{ textTransform: 'capitalize' }}>{agent.name}</span>
+                          <span className="text-muted" style={{ fontSize: '10px', marginLeft: 'auto' }}>
+                            ({agent.runtime})
+                          </span>
+                          {isOpen && <Check size={12} className="text-cyan ml-1" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
               {/* Session Mode */}
               <button
@@ -102,7 +141,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               </button>
 
               {/* Layout Dropdown */}
-              <div className="relative">
+              <div className="relative" ref={layoutDropdownRef}>
                 <button
                   className="btn-control-item"
                   onClick={() => setIsLayoutDropdownOpen(!isLayoutDropdownOpen)}
@@ -114,24 +153,21 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 </button>
 
                 {isLayoutDropdownOpen && (
-                  <>
-                    <div className="menu-backdrop" onClick={() => setIsLayoutDropdownOpen(false)} />
-                    <div className="layout-dropdown-menu">
-                      {layouts.map(l => (
-                        <button
-                          key={l.id}
-                          className={`dropdown-item ${currentLayout === l.id ? 'active' : ''}`}
-                          onClick={() => {
-                            onSelectLayout(l.id);
-                            setIsLayoutDropdownOpen(false);
-                          }}
-                        >
-                          {l.icon}
-                          <span>{l.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
+                  <div className="layout-dropdown-menu">
+                    {layouts.map(l => (
+                      <button
+                        key={l.id}
+                        className={`dropdown-item ${currentLayout === l.id ? 'active' : ''}`}
+                        onClick={() => {
+                          onSelectLayout(l.id);
+                          setIsLayoutDropdownOpen(false);
+                        }}
+                      >
+                        {l.icon}
+                        <span>{l.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
 
@@ -168,7 +204,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           </button>
 
           {/* More Options Button */}
-          <div className="relative">
+          <div className="relative" ref={moreMenuRef}>
             <button
               className="btn-more-options"
               onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}

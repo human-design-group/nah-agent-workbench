@@ -3,6 +3,7 @@ import { PanelGroup, Panel } from 'react-resizable-panels';
 import { AgentConfig, LayoutMode } from '../types/workbench';
 import { AgentCard } from './AgentCard';
 import { ResizeHandle } from './ResizeHandle';
+import { Plus } from 'lucide-react';
 
 interface GridContainerProps {
   layoutMode: LayoutMode;
@@ -19,6 +20,7 @@ interface GridContainerProps {
   onDuplicateSession?: (agentId: string) => void;
   onClearSession?: (agentId: string) => void;
   onClosePanel?: (agentId: string) => void;
+  onAddAgentClick?: () => void;
 }
 
 export const GridContainer: React.FC<GridContainerProps> = ({
@@ -36,17 +38,20 @@ export const GridContainer: React.FC<GridContainerProps> = ({
   onDuplicateSession,
   onClearSession,
   onClosePanel,
+  onAddAgentClick,
 }) => {
   const [focusedSlot, setFocusedSlot] = useState<number>(0);
   const allAgentsList = agents.map((a) => ({ key: a.key, name: a.name, runtime: a.runtime }));
 
   const getAgentForSlot = (slotIdx: number): AgentConfig => {
-    const key = slotKeys[slotIdx] || agents[slotIdx % agents.length]?.key || 'humano';
-    return agents.find((a) => a.key === key) || agents[0];
+    const key = slotKeys[slotIdx];
+    return agents.find((a) => a.key === key) || agents.find((a) => a.id === key) || agents[0];
   };
 
   const renderCard = (slotIdx: number) => {
     const agent = getAgentForSlot(slotIdx);
+    if (!agent) return null;
+
     return (
       <AgentCard
         agent={agent}
@@ -68,99 +73,141 @@ export const GridContainer: React.FC<GridContainerProps> = ({
     );
   };
 
-  // 1. Single Agent Focus Mode (1x1)
-  if (layoutMode === 'focus') {
+  // Empty state if all slots closed
+  if (!slotKeys || slotKeys.length === 0) {
     return (
-      <div className="grid-stage">
-        {renderCard(focusedSlot)}
+      <div className="grid-stage empty-stage">
+        <div className="empty-state-card">
+          <h3>No Active Agent Panels</h3>
+          <p>Add an agent to start collaborating across the workbench.</p>
+          <button className="btn-go" onClick={onAddAgentClick}>
+            <Plus size={14} />
+            <span>Add Agent</span>
+          </button>
+        </div>
       </div>
     );
   }
 
-  // 2. Horizontal Stack Mode (4x1 panels stacked on top of one another)
+  // 1. Single Agent Focus Mode (1x1)
+  if (layoutMode === 'focus') {
+    const safeSlot = focusedSlot < slotKeys.length ? focusedSlot : 0;
+    return (
+      <div className="grid-stage">
+        {renderCard(safeSlot)}
+      </div>
+    );
+  }
+
+  // 2. Horizontal Stack Mode (Stacked vertical rows)
   if (layoutMode === 'horizontal') {
+    const count = slotKeys.length;
+    const defaultSize = 100 / count;
     return (
       <div className="grid-stage">
         <PanelGroup direction="vertical">
-          <Panel defaultSize={25} minSize={15}>
-            {renderCard(0)}
-          </Panel>
-          <ResizeHandle direction="horizontal" />
-
-          <Panel defaultSize={25} minSize={15}>
-            {renderCard(1)}
-          </Panel>
-          <ResizeHandle direction="horizontal" />
-
-          <Panel defaultSize={25} minSize={15}>
-            {renderCard(2)}
-          </Panel>
-          <ResizeHandle direction="horizontal" />
-
-          <Panel defaultSize={25} minSize={15}>
-            {renderCard(3)}
-          </Panel>
+          {slotKeys.map((key, idx) => (
+            <React.Fragment key={`horiz-${key}-${idx}`}>
+              <Panel defaultSize={defaultSize} minSize={15}>
+                {renderCard(idx)}
+              </Panel>
+              {idx < count - 1 && <ResizeHandle direction="horizontal" />}
+            </React.Fragment>
+          ))}
         </PanelGroup>
       </div>
     );
   }
 
-  // 3. 3-Column Split Mode (1x3)
+  // 3. 3-Column Split Mode (Up to 3 columns)
   if (layoutMode === 'split-3') {
+    const visibleSlots = slotKeys.slice(0, 3);
+    const count = visibleSlots.length;
+    const defaultSize = 100 / count;
     return (
       <div className="grid-stage">
         <PanelGroup direction="horizontal">
-          <Panel defaultSize={33.33} minSize={20}>
-            {renderCard(0)}
-          </Panel>
-          <ResizeHandle direction="vertical" />
-
-          <Panel defaultSize={33.33} minSize={20}>
-            {renderCard(1)}
-          </Panel>
-          <ResizeHandle direction="vertical" />
-
-          <Panel defaultSize={33.33} minSize={20}>
-            {renderCard(2)}
-          </Panel>
+          {visibleSlots.map((key, idx) => (
+            <React.Fragment key={`split3-${key}-${idx}`}>
+              <Panel defaultSize={defaultSize} minSize={20}>
+                {renderCard(idx)}
+              </Panel>
+              {idx < count - 1 && <ResizeHandle direction="vertical" />}
+            </React.Fragment>
+          ))}
         </PanelGroup>
       </div>
     );
   }
 
-  // 4. Vertical 1x4 Layout (Frame 2011:2051 in Figma)
+  // 4. Vertical Mode (Columns side by side)
   if (layoutMode === 'vertical') {
+    const count = slotKeys.length;
+    const defaultSize = 100 / count;
     return (
       <div className="grid-stage">
         <PanelGroup direction="horizontal">
-          <Panel defaultSize={25} minSize={15}>
-            {renderCard(0)}
-          </Panel>
-          <ResizeHandle direction="vertical" />
+          {slotKeys.map((key, idx) => (
+            <React.Fragment key={`vert-${key}-${idx}`}>
+              <Panel defaultSize={defaultSize} minSize={15}>
+                {renderCard(idx)}
+              </Panel>
+              {idx < count - 1 && <ResizeHandle direction="vertical" />}
+            </React.Fragment>
+          ))}
+        </PanelGroup>
+      </div>
+    );
+  }
 
-          <Panel defaultSize={25} minSize={15}>
-            {renderCard(1)}
-          </Panel>
-          <ResizeHandle direction="vertical" />
+  // 5. 2x2 Grid Layout
+  const count = slotKeys.length;
+  if (count <= 2) {
+    const defaultSize = 100 / count;
+    return (
+      <div className="grid-stage">
+        <PanelGroup direction="horizontal">
+          {slotKeys.map((key, idx) => (
+            <React.Fragment key={`grid-${key}-${idx}`}>
+              <Panel defaultSize={defaultSize} minSize={20}>
+                {renderCard(idx)}
+              </Panel>
+              {idx < count - 1 && <ResizeHandle direction="vertical" />}
+            </React.Fragment>
+          ))}
+        </PanelGroup>
+      </div>
+    );
+  }
 
-          <Panel defaultSize={25} minSize={15}>
+  if (count === 3) {
+    return (
+      <div className="grid-stage">
+        <PanelGroup direction="vertical">
+          <Panel defaultSize={50} minSize={25}>
+            <PanelGroup direction="horizontal">
+              <Panel defaultSize={50} minSize={20}>
+                {renderCard(0)}
+              </Panel>
+              <ResizeHandle direction="vertical" />
+              <Panel defaultSize={50} minSize={20}>
+                {renderCard(1)}
+              </Panel>
+            </PanelGroup>
+          </Panel>
+          <ResizeHandle direction="horizontal" />
+          <Panel defaultSize={50} minSize={25}>
             {renderCard(2)}
-          </Panel>
-          <ResizeHandle direction="vertical" />
-
-          <Panel defaultSize={25} minSize={15}>
-            {renderCard(3)}
           </Panel>
         </PanelGroup>
       </div>
     );
   }
 
-  // 5. 2x2 Grid Layout (Frame 2001:213 in Figma)
+  // 4 or more: 2x2 grid
   return (
     <div className="grid-stage">
       <PanelGroup direction="vertical">
-        {/* Top Row: Panel 0 + Panel 1 */}
         <Panel defaultSize={50} minSize={25}>
           <PanelGroup direction="horizontal">
             <Panel defaultSize={50} minSize={20}>
@@ -175,7 +222,6 @@ export const GridContainer: React.FC<GridContainerProps> = ({
 
         <ResizeHandle direction="horizontal" />
 
-        {/* Bottom Row: Panel 2 + Panel 3 */}
         <Panel defaultSize={50} minSize={25}>
           <PanelGroup direction="horizontal">
             <Panel defaultSize={50} minSize={20}>
