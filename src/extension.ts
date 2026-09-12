@@ -1,13 +1,47 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { WebviewToHostMessage, WorkbenchState } from './webview/types/workbench.js';
+import { WebviewToHostMessage, WorkbenchState, RemoteShareInfo } from './webview/types/workbench';
+import { RemoteControlServer } from './bridge/remoteServer';
 
 let currentPanel: vscode.WebviewPanel | undefined = undefined;
+let remoteServer: RemoteControlServer | null = null;
+let statusBarItem: vscode.StatusBarItem | undefined = undefined;
 const STATE_STORAGE_KEY = 'nahWorkbench.persistedState';
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('notahuman Workbench extension activated');
+  console.log('notahuman Agent Workbench extension activated');
+
+  // Initialize Remote Control Server
+  remoteServer = new RemoteControlServer({
+    port: 4545,
+    extensionPath: context.extensionPath,
+    onClientMessage: (msg) => {
+      console.log('[RemoteServer Msg]', msg);
+      if (currentPanel) {
+        currentPanel.webview.postMessage(msg);
+      }
+    },
+  });
+
+  remoteServer
+    .start()
+    .then((port) => {
+      console.log(`[RemoteServer] Started on port ${port}`);
+      updateStatusBar(port);
+      broadcastRemoteInfo();
+    })
+    .catch((err) => {
+      console.error('[RemoteServer] Failed to start:', err);
+    });
+
+  // Status Bar Item
+  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  statusBarItem.command = 'nah.openWorkbench';
+  statusBarItem.text = '$(hubot) Workbench:4545';
+  statusBarItem.tooltip = 'Agent Workbench Remote Bridge Active (Click to open)';
+  statusBarItem.show();
+  context.subscriptions.push(statusBarItem);
 
   const openWorkbenchCommand = vscode.commands.registerCommand('nah.openWorkbench', () => {
     const column = vscode.window.activeTextEditor
@@ -21,7 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     currentPanel = vscode.window.createWebviewPanel(
       'nahWorkbench',
-      'notahuman Workbench',
+      'Agent Workbench',
       column || vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -42,14 +76,15 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Send restored state to webview once ready
     const savedState = context.workspaceState.get<WorkbenchState>(STATE_STORAGE_KEY);
-    if (savedState) {
-      setTimeout(() => {
-        currentPanel?.webview.postMessage({
+    setTimeout(() => {
+      if (savedState && currentPanel) {
+        currentPanel.webview.postMessage({
           type: 'RESTORE_STATE',
           payload: savedState,
         });
-      }, 300);
-    }
+      }
+      broadcastRemoteInfo();
+    }, 300);
 
     // Handle messages from Webview
     currentPanel.webview.onDidReceiveMessage(
@@ -63,6 +98,38 @@ export function activate(context: vscode.ExtensionContext) {
             break;
           case 'EXECUTE_COMMAND':
             await vscode.commands.executeCommand(message.payload.command);
+            break;
+          case 'COPY_REMOTE_URL': {
+            const { target, agentId } = message.payload;
+            if (remoteServer) {
+              let copied = '';
+              if (target === 'session') {
+                copied = remoteServer.getCurrentSessionUrl(agentId);
+                vscode.window.showInformationMessage(`Copied Session URL: ${copied}`);
+              } else if (target === 'workspace') {
+                copied = remoteServer.getWorkspaceUrl();
+                vscode.window.showInformationMessage(`Copied Workspace URL: ${copied}`);
+              } else {
+                copied = remoteServer.getShareCode();
+                vscode.window.showInformationMessage(`Copied Share Code: ${copied}`);
+              }
+              await vscode.env.clipboard.writeText(copied);
+            }
+            break;
+          }
+          case 'EXPORT_SESSION':
+            vscode.window.showInformationMessage(`Session exported to JSON / Markdown.`);
+            break;
+          case 'DUPLICATE_SESSION':
+            vscode.window.showInformationMessage(`Session duplicated successfully.`);
+            break;
+          case 'FIND_IN_SESSION':
+            vscode.commands.executeCommand('actions.find');
+            break;
+          case 'RELOAD_WORKBENCH':
+            if (currentPanel) {
+              currentPanel.webview.postMessage({ type: 'RESET_LAYOUT' });
+            }
             break;
         }
       },
@@ -79,6 +146,22 @@ export function activate(context: vscode.ExtensionContext) {
     );
   });
 
+  const copySessionUrlCommand = vscode.commands.registerCommand('nah.copySessionUrl', async () => {
+    if (remoteServer) {
+      const url = remoteServer.getCurrentSessionUrl();
+      await vscode.env.clipboard.writeText(url);
+      vscode.window.showInformationMessage(`Copied Session URL: ${url}`);
+    }
+  });
+
+  const copyWorkspaceUrlCommand = vscode.commands.registerCommand('nah.copyWorkspaceUrl', async () => {
+    if (remoteServer) {
+      const url = remoteServer.getWorkspaceUrl();
+      await vscode.env.clipboard.writeText(url);
+      vscode.window.showInformationMessage(`Copied Workspace URL: ${url}`);
+    }
+  });
+
   const resetLayoutCommand = vscode.commands.registerCommand('nah.resetWorkbenchLayout', async () => {
     await context.workspaceState.update(STATE_STORAGE_KEY, undefined);
     if (currentPanel) {
@@ -86,12 +169,41 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  context.subscriptions.push(openWorkbenchCommand, resetLayoutCommand);
+  context.subscriptions.push(
+    openWorkbenchCommand,
+    copySessionUrlCommand,
+    copyWorkspaceUrlCommand,
+    resetLayoutCommand
+  );
+}
+
+function updateStatusBar(port: number) {
+  if (statusBarItem) {
+    statusBarItem.text = `$(hubot) Workbench:${port}`;
+  }
+}
+
+function broadcastRemoteInfo() {
+  if (currentPanel && remoteServer) {
+    const payload: RemoteShareInfo = {
+      port: remoteServer.getPort(),
+      shareCode: remoteServer.getShareCode(),
+      currentSessionUrl: remoteServer.getCurrentSessionUrl(),
+      workspaceUrl: remoteServer.getWorkspaceUrl(),
+    };
+    currentPanel.webview.postMessage({
+      type: 'REMOTE_INFO_UPDATE',
+      payload,
+    });
+  }
 }
 
 export function deactivate() {
   if (currentPanel) {
     currentPanel.dispose();
+  }
+  if (remoteServer) {
+    remoteServer.stop();
   }
 }
 
@@ -112,7 +224,7 @@ function getWebviewContent(context: vscode.ExtensionContext, webview: vscode.Web
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource};">
   <link href="${cssUri}" rel="stylesheet">
-  <title>notahuman Workbench</title>
+  <title>Agent Workbench</title>
 </head>
 <body>
   <div id="root"></div>

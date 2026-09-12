@@ -1,32 +1,48 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles/main.css';
-import { useWorkbenchState } from './hooks/useWorkbenchState.js';
-import { ControlBar } from './components/ControlBar.js';
-import { GridContainer } from './components/GridContainer.js';
+import { useWorkbenchState } from './hooks/useWorkbenchState';
+import { ControlBar } from './components/ControlBar';
+import { GridContainer } from './components/GridContainer';
 
 const App: React.FC = () => {
   const {
     state,
     setLayoutMode,
+    setSessionMode,
     switchAgentSlot,
     setAgentModel,
     setAgentPermissions,
     sendMessageToAgent,
     forkSession,
     newSession,
-    resetLayout,
+    exportSession,
+    duplicateSession,
+    findInSession,
+    closeAgentPanel,
+    copyRemoteUrl,
+    reloadWorkbench,
   } = useWorkbenchState();
-
-  const onlineCount = state.agents.filter((a) => a.status === 'online' || a.status === 'thinking').length;
 
   return (
     <div className="workbench-app">
       <ControlBar
-        layoutMode={state.layoutMode}
-        onLayoutChange={setLayoutMode}
-        onResetLayout={resetLayout}
-        onlineCount={onlineCount}
+        currentLayout={state.layoutMode}
+        onSelectLayout={setLayoutMode}
+        sessionMode={state.sessionMode}
+        teamConfig={state.teamConfig}
+        onApplySessionMode={setSessionMode}
+        availableAgents={state.agents}
+        remoteInfo={state.remoteInfo}
+        onReload={reloadWorkbench}
+        onOpenSettings={() => console.log('Open settings')}
+        onExportSession={() => exportSession()}
+        onFindInSession={() => findInSession()}
+        onDuplicateSession={() => duplicateSession()}
+        onCopyRemoteUrl={copyRemoteUrl}
+        onAddAgent={() => {
+          console.log('Add agent to workbench');
+        }}
       />
       <GridContainer
         layoutMode={state.layoutMode}
@@ -38,6 +54,11 @@ const App: React.FC = () => {
         onSelectPermissions={setAgentPermissions}
         onForkSession={forkSession}
         onNewSession={newSession}
+        onFindInSession={findInSession}
+        onExportSession={exportSession}
+        onDuplicateSession={duplicateSession}
+        onClearSession={(agentId) => console.log('Clear session for', agentId)}
+        onClosePanel={closeAgentPanel}
       />
     </div>
   );

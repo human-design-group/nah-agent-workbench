@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { AgentConfig } from '../types/workbench.js';
+import { AgentConfig } from '../types/workbench';
 import { PlusCircle, ChevronDown, ChevronRight, Circle, ArrowUp, Mic, Check, Copy, Terminal, Cpu } from 'lucide-react';
+import { AddContextMenu } from './AddContextMenu';
 
 interface AgentChatViewProps {
   agent: AgentConfig;
-  onSendMessage: (text: string) => void;
+  onSendMessage: (text: string, attachments?: any[]) => void;
   onSelectModel: (model: string) => void;
   onSelectPermissions: (mode: string) => void;
 }
@@ -21,6 +22,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
   const [expandedCot, setExpandedCot] = useState<Record<string, boolean>>({});
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [showPermsMenu, setShowPermsMenu] = useState(false);
+  const [showAddContextMenu, setShowAddContextMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -53,6 +55,22 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
 
   const toggleCot = (id: string) => {
     setExpandedCot((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleSelectContext = (type: string, detail?: string) => {
+    if (type === 'media') {
+      setInputText((prev) => prev + (prev ? ' ' : '') + '[Media Attachment: image.png]');
+    } else if (type === 'file') {
+      setInputText((prev) => prev + (prev ? ' ' : '') + '@file:');
+    } else if (type === 'skill') {
+      setInputText((prev) => prev + (prev ? ' ' : '') + `Use skill /${detail || 'nah-figma'} `);
+    } else if (type === 'connector') {
+      setInputText((prev) => prev + (prev ? ' ' : '') + `Query connector: ${detail} `);
+    } else if (type === 'actions') {
+      setInputText((prev) => prev + (prev ? ' ' : '') + '/');
+    } else if (type === 'websearch') {
+      setInputText((prev) => prev + (prev ? ' ' : '') + '/search: ');
+    }
   };
 
   const MODELS = [
@@ -149,9 +167,22 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
 
         <div className="composer-toolbar">
           <div className="composer-controls-left">
-            <button type="button" className="icon-button" title="Add attachment or tool">
-              <PlusCircle size={15} color="#94a3b8" />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setShowAddContextMenu(!showAddContextMenu)}
+                title="Add Media and Context (+)"
+              >
+                <PlusCircle size={15} color="#38bdf8" />
+              </button>
+
+              <AddContextMenu
+                isOpen={showAddContextMenu}
+                onClose={() => setShowAddContextMenu(false)}
+                onSelectContext={handleSelectContext}
+              />
+            </div>
 
             {/* Permissions Pill */}
             <div className="dropdown-pill-wrapper">

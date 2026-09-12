@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { AgentConfig } from '../types/workbench.js';
-import { AgentHeader } from './AgentHeader.js';
-import { AgentChatView } from './AgentChatView.js';
-import { AgentDrawer } from './AgentDrawer.js';
+import { AgentConfig } from '../types/workbench';
+import { AgentHeader } from './AgentHeader';
+import { AgentChatView } from './AgentChatView';
+import { AgentDrawer } from './AgentDrawer';
 
 interface AgentCardProps {
   agent: AgentConfig;
@@ -10,11 +10,16 @@ interface AgentCardProps {
   isFocused?: boolean;
   onFocus?: () => void;
   onSwitchAgent?: (newAgentKey: string) => void;
-  onSendMessage: (text: string) => void;
+  onSendMessage: (text: string, attachments?: any[]) => void;
   onSelectModel: (model: string) => void;
   onSelectPermissions: (mode: string) => void;
   onFork: () => void;
   onNewSession: () => void;
+  onFindInSession?: (agentId: string) => void;
+  onExportSession?: (agentId: string) => void;
+  onDuplicateSession?: (agentId: string) => void;
+  onClearSession?: (agentId: string) => void;
+  onClosePanel?: (agentId: string) => void;
 }
 
 export const AgentCard: React.FC<AgentCardProps> = ({
@@ -28,6 +33,11 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   onSelectPermissions,
   onFork,
   onNewSession,
+  onFindInSession,
+  onExportSession,
+  onDuplicateSession,
+  onClearSession,
+  onClosePanel,
 }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -43,6 +53,11 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         onSwitchAgent={onSwitchAgent}
         onFork={onFork}
         onNewSession={onNewSession}
+        onFindInSession={onFindInSession}
+        onExportSession={onExportSession}
+        onDuplicateSession={onDuplicateSession}
+        onClearSession={onClearSession}
+        onClosePanel={onClosePanel}
       />
       <AgentChatView
         agent={agent}

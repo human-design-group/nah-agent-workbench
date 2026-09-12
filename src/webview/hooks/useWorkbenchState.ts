@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AgentConfig, LayoutMode, WorkbenchState, HostToWebviewMessage } from '../types/workbench.js';
-import { getVSCodeApi } from './useVSCodeApi.js';
+import { AgentConfig, LayoutMode, SessionMode, TeamConfig, WorkbenchState, HostToWebviewMessage } from '../types/workbench';
+import { getVSCodeApi } from './useVSCodeApi';
 
 const INITIAL_AGENT_MESSAGE = `Hi! Welcome to justbeahuman. The portfolio for Derek Arrington. I’m nah, Derek’s assistant and I’ll be your guide.
 
@@ -180,12 +180,19 @@ const DEFAULT_AGENTS: AgentConfig[] = [
 ];
 
 const INITIAL_STATE: WorkbenchState = {
-  layoutMode: 'grid',
+  layoutMode: 'vertical',
+  sessionMode: 'independent',
   agents: DEFAULT_AGENTS,
   panelSlots: ['humano', 'uno', 'omo', 'astro'],
-  panelSizes: [50, 50, 50, 50],
+  panelSizes: [25, 25, 25, 25],
   focusedAgentId: 'agent-humano',
-  voiceActive: false,
+  activeDrawerAgentId: null,
+  remoteInfo: {
+    port: 4545,
+    shareCode: 'NAH777',
+    currentSessionUrl: 'http://127.0.0.1:4545/?session=humano',
+    workspaceUrl: 'http://127.0.0.1:4545/',
+  }
 };
 
 export function useWorkbenchState() {
@@ -215,6 +222,12 @@ export function useWorkbenchState() {
             }));
           }
           break;
+        case 'REMOTE_INFO_UPDATE':
+          setState((prev) => ({
+            ...prev,
+            remoteInfo: msg.payload,
+          }));
+          break;
         case 'RESET_LAYOUT':
           setState(INITIAL_STATE);
           break;
@@ -231,6 +244,22 @@ export function useWorkbenchState() {
       layoutMode: mode,
     }));
   }, []);
+
+  const setSessionMode = useCallback((mode: SessionMode, teamConfig?: TeamConfig) => {
+    setState((prev) => ({
+      ...prev,
+      sessionMode: mode,
+      teamConfig: teamConfig || prev.teamConfig,
+      panelSlots:
+        mode === 'team' && teamConfig?.agentIds
+          ? teamConfig.agentIds.map(id => prev.agents.find(a => a.id === id)?.key || id)
+          : prev.panelSlots,
+    }));
+    vscode.postMessage({
+      type: 'SET_SESSION_MODE',
+      payload: { mode, teamConfig },
+    });
+  }, [vscode]);
 
   const switchAgentSlot = useCallback((slotIndex: number, newAgentKey: string) => {
     setState((prev) => {
@@ -261,7 +290,7 @@ export function useWorkbenchState() {
     }));
   }, []);
 
-  const sendMessageToAgent = useCallback((agentId: string, text: string) => {
+  const sendMessageToAgent = useCallback((agentId: string, text: string, attachments?: any[]) => {
     if (!text.trim()) return;
 
     const userMsg = {
@@ -285,7 +314,7 @@ export function useWorkbenchState() {
 
     vscode.postMessage({
       type: 'SEND_AGENT_MESSAGE',
-      payload: { agentId, text },
+      payload: { agentId, text, attachments },
     });
 
     // Simulate reactive ACP response
@@ -325,6 +354,52 @@ export function useWorkbenchState() {
     vscode.postMessage({ type: 'NEW_SESSION', payload: { agentId } });
   }, [vscode]);
 
+  const exportSession = useCallback((agentId?: string) => {
+    vscode.postMessage({ type: 'EXPORT_SESSION', payload: { agentId } });
+  }, [vscode]);
+
+  const duplicateSession = useCallback((agentId?: string) => {
+    vscode.postMessage({ type: 'DUPLICATE_SESSION', payload: { agentId } });
+  }, [vscode]);
+
+  const findInSession = useCallback((agentId?: string) => {
+    vscode.postMessage({ type: 'FIND_IN_SESSION', payload: { agentId } });
+  }, [vscode]);
+
+  const closeAgentPanel = useCallback((agentId: string) => {
+    setState((prev) => {
+      const agent = prev.agents.find(a => a.id === agentId);
+      if (!agent) return prev;
+      const newSlots = prev.panelSlots.filter(s => s !== agent.key);
+      return {
+        ...prev,
+        panelSlots: newSlots.length > 0 ? newSlots : ['humano'],
+      };
+    });
+    vscode.postMessage({ type: 'CLOSE_AGENT_PANEL', payload: { agentId } });
+  }, [vscode]);
+
+  const copyRemoteUrl = useCallback((target: 'session' | 'workspace' | 'shareCode', agentId?: string) => {
+    const info = state.remoteInfo;
+    let textToCopy = '';
+    if (target === 'session') {
+      textToCopy = info?.currentSessionUrl || `http://127.0.0.1:4545/?session=${agentId || 'humano'}`;
+    } else if (target === 'workspace') {
+      textToCopy = info?.workspaceUrl || 'http://127.0.0.1:4545/';
+    } else {
+      textToCopy = info?.shareCode || 'NAH777';
+    }
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(textToCopy);
+    }
+    vscode.postMessage({ type: 'COPY_REMOTE_URL', payload: { target, agentId } });
+  }, [state.remoteInfo, vscode]);
+
+  const reloadWorkbench = useCallback(() => {
+    vscode.postMessage({ type: 'RELOAD_WORKBENCH' });
+  }, [vscode]);
+
   const resetLayout = useCallback(() => {
     setState(INITIAL_STATE);
   }, []);
@@ -332,6 +407,7 @@ export function useWorkbenchState() {
   return {
     state,
     setLayoutMode,
+    setSessionMode,
     switchAgentSlot,
     setPanelSizes,
     setAgentModel,
@@ -339,6 +415,12 @@ export function useWorkbenchState() {
     sendMessageToAgent,
     forkSession,
     newSession,
+    exportSession,
+    duplicateSession,
+    findInSession,
+    closeAgentPanel,
+    copyRemoteUrl,
+    reloadWorkbench,
     resetLayout,
   };
 }

@@ -1,90 +1,205 @@
-import React from 'react';
-import { LayoutMode } from '../types/workbench.js';
-import { LayoutGrid, Columns, Rows, Maximize2, Columns3, RotateCcw, Radio } from 'lucide-react';
+import React, { useState } from 'react';
+import { LayoutMode, SessionMode, TeamConfig, RemoteShareInfo, AgentConfig } from '../types/workbench';
+import {
+  Sliders,
+  MoreVertical,
+  Plus,
+  Users,
+  LayoutGrid,
+  Columns,
+  Rows,
+  Split,
+  Maximize2,
+  RefreshCw,
+  ChevronDown,
+  ShieldAlert,
+  Bot
+} from 'lucide-react';
+import { SessionModeModal } from './SessionModeModal';
+import { ExtensionMoreMenu } from './ExtensionMoreMenu';
 
 interface ControlBarProps {
-  layoutMode: LayoutMode;
-  onLayoutChange: (mode: LayoutMode) => void;
-  onResetLayout: () => void;
-  onlineCount: number;
+  currentLayout: LayoutMode;
+  onSelectLayout: (mode: LayoutMode) => void;
+  sessionMode: SessionMode;
+  teamConfig?: TeamConfig;
+  onApplySessionMode: (mode: SessionMode, config?: TeamConfig) => void;
+  availableAgents: AgentConfig[];
+  remoteInfo?: RemoteShareInfo;
+  onReload: () => void;
+  onOpenSettings: () => void;
+  onExportSession: () => void;
+  onFindInSession: () => void;
+  onDuplicateSession: () => void;
+  onCopyRemoteUrl: (target: 'session' | 'workspace' | 'shareCode') => void;
+  onAddAgent: () => void;
 }
 
 export const ControlBar: React.FC<ControlBarProps> = ({
-  layoutMode,
-  onLayoutChange,
-  onResetLayout,
-  onlineCount,
+  currentLayout,
+  onSelectLayout,
+  sessionMode,
+  teamConfig,
+  onApplySessionMode,
+  availableAgents,
+  remoteInfo,
+  onReload,
+  onOpenSettings,
+  onExportSession,
+  onFindInSession,
+  onDuplicateSession,
+  onCopyRemoteUrl,
+  onAddAgent,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isLayoutDropdownOpen, setIsLayoutDropdownOpen] = useState(false);
+
+  const layouts: { id: LayoutMode; label: string; icon: React.ReactNode }[] = [
+    { id: 'grid', label: 'Grid (2x2)', icon: <LayoutGrid size={13} /> },
+    { id: 'vertical', label: 'Vertical (1x4)', icon: <Columns size={13} /> },
+    { id: 'horizontal', label: 'Horizontal (4x1)', icon: <Rows size={13} /> },
+    { id: 'split-3', label: 'Split 3 (1+2)', icon: <Split size={13} /> },
+    { id: 'focus', label: 'Focus (1)', icon: <Maximize2 size={13} /> },
+  ];
+
   return (
-    <div className="control-bar">
-      <div className="brand-section">
-        <Radio size={14} color="#38bdf8" className="pulse-icon" />
-        <span className="brand-title">Agent Workbench</span>
-        <span className="brand-badge">Mission Control</span>
-      </div>
-
-      <div className="right-controls-group">
-        <div className="status-pill" title="Live ACP Multi-Agent Gateway">
-          <span className="live-dot" />
-          <span>{onlineCount} Agents Online</span>
+    <>
+      <header className={`control-bar ${isExpanded ? 'is-expanded' : 'is-compact'}`}>
+        {/* Left: Workbench Title & Brand */}
+        <div className="bar-left">
+          <div className="brand-badge">
+            <Bot size={16} className="brand-icon text-cyan" />
+            <span className="brand-title">Agent Workbench</span>
+          </div>
         </div>
 
-        {/* Mode Switcher positioned to the right */}
-        <div className="mode-switcher">
+        {/* Right: Controls Strip */}
+        <div className="bar-right">
+          {/* Expanded Control Center Panel */}
+          {isExpanded && (
+            <div className="expanded-controls-strip">
+              {/* Add Agent */}
+              <button
+                className="btn-control-item"
+                onClick={onAddAgent}
+                title="Add Agent to Workbench"
+              >
+                <span>Add Agent to Workbench</span>
+                <Plus size={13} className="text-cyan ml-1" />
+              </button>
+
+              {/* Session Mode */}
+              <button
+                className="btn-control-item"
+                onClick={() => setIsSessionModalOpen(true)}
+                title="Configure Session Mode (Independent vs Team)"
+              >
+                <Users size={13} className="text-cyan mr-1" />
+                <span>Session Mode {sessionMode === 'team' ? '(Team)' : '(Ind)'}</span>
+                <ChevronDown size={12} className="ml-1" />
+              </button>
+
+              {/* Layout Dropdown */}
+              <div className="relative">
+                <button
+                  className="btn-control-item"
+                  onClick={() => setIsLayoutDropdownOpen(!isLayoutDropdownOpen)}
+                  title="Select Layout Mode"
+                >
+                  <LayoutGrid size={13} className="text-cyan mr-1" />
+                  <span>Layout</span>
+                  <ChevronDown size={12} className="ml-1" />
+                </button>
+
+                {isLayoutDropdownOpen && (
+                  <>
+                    <div className="menu-backdrop" onClick={() => setIsLayoutDropdownOpen(false)} />
+                    <div className="layout-dropdown-menu">
+                      {layouts.map(l => (
+                        <button
+                          key={l.id}
+                          className={`dropdown-item ${currentLayout === l.id ? 'active' : ''}`}
+                          onClick={() => {
+                            onSelectLayout(l.id);
+                            setIsLayoutDropdownOpen(false);
+                          }}
+                        >
+                          {l.icon}
+                          <span>{l.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Focus Mode Toggle */}
+              <button
+                className={`btn-control-item ${currentLayout === 'focus' ? 'active-cyan' : ''}`}
+                onClick={() => onSelectLayout(currentLayout === 'focus' ? 'vertical' : 'focus')}
+                title="Toggle Focus Mode"
+              >
+                <span>Focus Mode</span>
+                <Maximize2 size={13} className="text-cyan ml-1" />
+              </button>
+
+              {/* Reload Button */}
+              <button
+                className="btn-control-item"
+                onClick={onReload}
+                title="Reload Workbench & Sync Agents"
+              >
+                <span>Reload</span>
+                <RefreshCw size={13} className="text-cyan ml-1" />
+              </button>
+            </div>
+          )}
+
+          {/* Control Center Toggle Button */}
           <button
-            className={`mode-btn ${layoutMode === 'grid' ? 'active' : ''}`}
-            onClick={() => onLayoutChange('grid')}
-            title="2x2 Grid Layout (Figma Frame 2001:213)"
+            className={`btn-control-center ${isExpanded ? 'active' : ''}`}
+            onClick={() => setIsExpanded(!isExpanded)}
+            title="Toggle Control Center Toolbar"
           >
-            <LayoutGrid size={13} />
-            <span>2x2 Grid</span>
+            <Sliders size={14} className="control-icon" />
+            <span>Control Center</span>
           </button>
 
-          <button
-            className={`mode-btn ${layoutMode === 'vertical' ? 'active' : ''}`}
-            onClick={() => onLayoutChange('vertical')}
-            title="1x4 Vertical Strip Layout (Figma Frame 2011:2051)"
-          >
-            <Columns size={13} />
-            <span>1x4 Strip</span>
-          </button>
+          {/* More Options Button */}
+          <div className="relative">
+            <button
+              className="btn-more-options"
+              onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+              title="Extension Settings & Remote Control"
+            >
+              <MoreVertical size={16} />
+            </button>
 
-          <button
-            className={`mode-btn ${layoutMode === 'horizontal' ? 'active' : ''}`}
-            onClick={() => onLayoutChange('horizontal')}
-            title="4x1 Horizontal Stack Layout"
-          >
-            <Rows size={13} />
-            <span>Horizontal Stack</span>
-          </button>
-
-          <button
-            className={`mode-btn ${layoutMode === 'split-3' ? 'active' : ''}`}
-            onClick={() => onLayoutChange('split-3')}
-            title="1x3 Strip Layout"
-          >
-            <Columns3 size={13} />
-            <span>1x3 Strip</span>
-          </button>
-
-          <button
-            className={`mode-btn ${layoutMode === 'focus' ? 'active' : ''}`}
-            onClick={() => onLayoutChange('focus')}
-            title="Single Agent Focus Mode (1x1)"
-          >
-            <Maximize2 size={13} />
-            <span>Focus</span>
-          </button>
+            <ExtensionMoreMenu
+              isOpen={isMoreMenuOpen}
+              onClose={() => setIsMoreMenuOpen(false)}
+              remoteInfo={remoteInfo}
+              onOpenSettings={onOpenSettings}
+              onExportSession={onExportSession}
+              onFindInSession={onFindInSession}
+              onDuplicateSession={onDuplicateSession}
+              onCopyRemoteUrl={onCopyRemoteUrl}
+            />
+          </div>
         </div>
+      </header>
 
-        <button
-          className="reset-btn"
-          onClick={onResetLayout}
-          title="Reset panels to default sizes"
-        >
-          <RotateCcw size={12} />
-        </button>
-      </div>
-    </div>
+      {/* Session Mode Modal */}
+      <SessionModeModal
+        isOpen={isSessionModalOpen}
+        onClose={() => setIsSessionModalOpen(false)}
+        currentMode={sessionMode}
+        currentTeamConfig={teamConfig}
+        availableAgents={availableAgents}
+        onApplyMode={onApplySessionMode}
+      />
+    </>
   );
 };

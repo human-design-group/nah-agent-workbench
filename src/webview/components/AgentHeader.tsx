@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { AgentConfig } from '../types/workbench.js';
+import { AgentConfig } from '../types/workbench';
 import { Menu, ChevronDown, Plus, MoreVertical, Folder, GitBranch, GripVertical, Check } from 'lucide-react';
+import { AgentOptionsMenu } from './AgentOptionsMenu';
 
 interface AgentHeaderProps {
   agent: AgentConfig;
@@ -9,6 +10,11 @@ interface AgentHeaderProps {
   onSwitchAgent?: (newAgentKey: string) => void;
   onFork: () => void;
   onNewSession: () => void;
+  onFindInSession?: (agentId: string) => void;
+  onExportSession?: (agentId: string) => void;
+  onDuplicateSession?: (agentId: string) => void;
+  onClearSession?: (agentId: string) => void;
+  onClosePanel?: (agentId: string) => void;
 }
 
 export const AgentHeader: React.FC<AgentHeaderProps> = ({
@@ -18,9 +24,15 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
   onSwitchAgent,
   onFork,
   onNewSession,
+  onFindInSession = () => {},
+  onExportSession = () => {},
+  onDuplicateSession = () => {},
+  onClearSession = () => {},
+  onClosePanel = () => {},
 }) => {
   const [showAgentMenu, setShowAgentMenu] = useState(false);
   const [showSessionMenu, setShowSessionMenu] = useState(false);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
 
   // Capitalize name cleanly
   const displayName = agent.name.charAt(0).toUpperCase() + agent.name.slice(1);
@@ -99,7 +111,7 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
                 <span>{agent.sessionName}</span>
                 <span className="badge-tag">Current</span>
               </div>
-              <div className="session-menu-item" onClick={() => onNewSession()}>
+              <div className="session-menu-item" onClick={() => { onNewSession(); setShowSessionMenu(false); }}>
                 <Plus size={11} />
                 <span>Create New Session</span>
               </div>
@@ -111,9 +123,27 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
           <button className="icon-button" onClick={onNewSession} title="New Session / Tab">
             <Plus size={14} />
           </button>
-          <button className="icon-button" title="Panel Options">
-            <MoreVertical size={14} />
-          </button>
+          
+          <div className="relative">
+            <button
+              className="icon-button"
+              onClick={() => setShowOptionsMenu(!showOptionsMenu)}
+              title="Panel Options"
+            >
+              <MoreVertical size={14} />
+            </button>
+
+            <AgentOptionsMenu
+              isOpen={showOptionsMenu}
+              onClose={() => setShowOptionsMenu(false)}
+              agentId={agent.id}
+              onFindInSession={onFindInSession}
+              onExportSession={onExportSession}
+              onDuplicateSession={onDuplicateSession}
+              onClearSession={onClearSession}
+              onClosePanel={onClosePanel}
+            />
+          </div>
         </div>
       </div>
 
