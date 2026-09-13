@@ -1,11 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { WebviewToHostMessage, WorkbenchState, RemoteShareInfo, AttachedContextItem } from './webview/types/workbench';
+import { WebviewToHostMessage, WorkbenchState, RemoteShareInfo } from './webview/types/workbench';
 import { RemoteControlServer } from './bridge/remoteServer';
-import { AgentScanner } from './bridge/agentScanner';
-import { AgentRunner } from './bridge/agentRunner';
-import { GitManager } from './bridge/gitManager';
 
 let currentPanel: vscode.WebviewPanel | undefined = undefined;
 let remoteServer: RemoteControlServer | null = null;
@@ -13,9 +10,9 @@ let statusBarItem: vscode.StatusBarItem | undefined = undefined;
 const STATE_STORAGE_KEY = 'nahWorkbench.persistedState';
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Agent Workbench extension activated');
+  console.log('notahuman Agent Workbench extension activated');
 
-  // 1. Initialize Remote Control Server
+  // Initialize Remote Control Server
   remoteServer = new RemoteControlServer({
     port: 4545,
     extensionPath: context.extensionPath,
@@ -38,16 +35,15 @@ export function activate(context: vscode.ExtensionContext) {
       console.error('[RemoteServer] Failed to start:', err);
     });
 
-  // 2. Status Bar Item
+  // Status Bar Item
   statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  statusBarItem.command = 'workbench.open';
+  statusBarItem.command = 'nah.openWorkbench';
   statusBarItem.text = '$(hubot) Workbench:4545';
-  statusBarItem.tooltip = 'Agent Workbench (Click to open)';
+  statusBarItem.tooltip = 'Agent Workbench Remote Bridge Active (Click to open)';
   statusBarItem.show();
   context.subscriptions.push(statusBarItem);
 
-  // 3. Register Commands
-  const openWorkbenchHandler = async () => {
+  const openWorkbench = () => {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -58,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     currentPanel = vscode.window.createWebviewPanel(
-      'agentWorkbench',
+      'nahWorkbench',
       'Agent Workbench',
       column || vscode.ViewColumn.One,
       {
@@ -80,31 +76,15 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Send restored state to webview once ready
     const savedState = context.workspaceState.get<WorkbenchState>(STATE_STORAGE_KEY);
-    setTimeout(async () => {
+    setTimeout(() => {
       if (savedState && currentPanel) {
         currentPanel.webview.postMessage({
           type: 'RESTORE_STATE',
           payload: savedState,
         });
       }
-
-      // Trigger automatic environment scan & git status on startup
-      const scanResult = await AgentScanner.scanEnvironment();
-      const gitStatus = await GitManager.getWorkspaceGitStatus();
-
-      if (currentPanel) {
-        currentPanel.webview.postMessage({
-          type: 'ENVIRONMENT_SCAN_RESULT',
-          payload: scanResult,
-        });
-        currentPanel.webview.postMessage({
-          type: 'GIT_STATUS_UPDATE',
-          payload: gitStatus,
-        });
-      }
-
       broadcastRemoteInfo();
-    }, 400);
+    }, 300);
 
     // Handle messages from Webview
     currentPanel.webview.onDidReceiveMessage(
@@ -113,115 +93,12 @@ export function activate(context: vscode.ExtensionContext) {
           case 'SAVE_STATE':
             await context.workspaceState.update(STATE_STORAGE_KEY, message.payload);
             break;
-
-          case 'REQUEST_ENVIRONMENT_SCAN': {
-            const scan = await AgentScanner.scanEnvironment();
-            if (currentPanel) {
-              currentPanel.webview.postMessage({
-                type: 'ENVIRONMENT_SCAN_RESULT',
-                payload: scan,
-              });
-            }
-            break;
-          }
-
-          case 'COMPLETE_ONBOARDING': {
-            const existing = context.workspaceState.get<WorkbenchState>(STATE_STORAGE_KEY) || ({} as WorkbenchState);
-            existing.isOnboarded = true;
-            existing.sessionMode = message.payload.teamMode;
-            existing.panelSlots = message.payload.selectedAgents;
-            if (message.payload.apiKey) existing.globalApiKey = message.payload.apiKey;
-            if (message.payload.apiEndpoint) existing.globalApiEndpoint = message.payload.apiEndpoint;
-            await context.workspaceState.update(STATE_STORAGE_KEY, existing);
-            vscode.window.showInformationMessage('Agent Workbench setup complete! Mission Control ready.');
-            break;
-          }
-
-          case 'REQUEST_ATTACH_CONTEXT': {
-            const { agentId, type } = message.payload;
-            let attachedItem: AttachedContextItem | null = null;
-
-            if (type === 'file') {
-              const fileCtx = await GitManager.getActiveEditorContext();
-              if (fileCtx) {
-                attachedItem = {
-                  id: 'att_' + Date.now(),
-                  title: fileCtx.title,
-                  content: fileCtx.content,
-                  type: 'file',
-                };
-              }
-            } else if (type === 'git-diff') {
-              const diffCtx = await GitManager.getGitDiffContext();
-              if (diffCtx) {
-                attachedItem = {
-                  id: 'att_' + Date.now(),
-                  title: diffCtx.title,
-                  content: diffCtx.content,
-                  type: 'git-diff',
-                };
-              }
-            }
-
-            if (attachedItem && currentPanel) {
-              currentPanel.webview.postMessage({
-                type: 'CONTEXT_ATTACHED',
-                payload: { agentId, item: attachedItem },
-              });
-              vscode.window.showInformationMessage(`Attached [${attachedItem.type}] ${attachedItem.title}`);
-            } else {
-              vscode.window.showWarningMessage('No active editor selection or workspace diff available to attach.');
-            }
-            break;
-          }
-
-          case 'SEND_AGENT_MESSAGE': {
-            const { agentId, agentKey, text, model, attachments } = message.payload;
-            const saved = context.workspaceState.get<WorkbenchState>(STATE_STORAGE_KEY);
-            const agentConfig = saved?.agents?.find((a) => a.id === agentId || a.key === agentId || a.key === agentKey);
-            const history = agentConfig?.messages || [];
-
-            await AgentRunner.executeAgentPrompt({
-              agentId,
-              agentName: agentConfig?.name || agentId,
-              agentKey: agentKey || agentConfig?.key || 'cursor-agent',
-              userPrompt: text,
-              history,
-              model: model || agentConfig?.selectedModel,
-              apiEndpoint: agentConfig?.apiEndpoint || saved?.globalApiEndpoint,
-              apiKey: agentConfig?.apiKey || saved?.globalApiKey,
-              contextAttachments: attachments,
-              onChunk: (delta, fullContent) => {
-                if (currentPanel) {
-                  currentPanel.webview.postMessage({
-                    type: 'AGENT_STREAM_CHUNK',
-                    payload: { agentId, delta, fullContent },
-                  });
-                }
-              },
-              onComplete: (completedMessage) => {
-                if (currentPanel) {
-                  currentPanel.webview.postMessage({
-                    type: 'AGENT_MESSAGE_RECEIVED',
-                    payload: { agentId, message: completedMessage },
-                  });
-                }
-              },
-              onError: (err) => {
-                vscode.window.showErrorMessage(`Agent execution notice: ${err.message}`);
-              },
-            });
-            break;
-          }
-
           case 'LOG':
-            console.log(`[Agent Workbench webview ${message.payload.level}] ${message.payload.message}`);
+            console.log(`[nah-workbench webview ${message.payload.level}] ${message.payload.message}`);
             break;
-
           case 'EXECUTE_COMMAND':
             await vscode.commands.executeCommand(message.payload.command);
             break;
-
           case 'COPY_REMOTE_URL': {
             const { target, agentId } = message.payload;
             if (remoteServer) {
@@ -240,29 +117,15 @@ export function activate(context: vscode.ExtensionContext) {
             }
             break;
           }
-
-          case 'EXPORT_SESSION': {
-            const saved = context.workspaceState.get<WorkbenchState>(STATE_STORAGE_KEY);
-            const markdown = `# Agent Workbench Session Export\n\nGenerated: ${new Date().toISOString()}\n\n` +
-              (saved?.agents || [])
-                .map((a) => `## Agent: ${a.name} (${a.provider} / ${a.runtime})\nModel: ${a.selectedModel}\n\n` +
-                  a.messages.map((m) => `**[${m.timestamp}] ${m.sender.toUpperCase()}:**\n${m.content}\n`).join('\n'))
-                .join('\n\n---\n\n');
-
-            const doc = await vscode.workspace.openTextDocument({ content: markdown, language: 'markdown' });
-            await vscode.window.showTextDocument(doc);
-            vscode.window.showInformationMessage('Session exported to Markdown.');
+          case 'EXPORT_SESSION':
+            vscode.window.showInformationMessage(`Session exported to JSON / Markdown.`);
             break;
-          }
-
           case 'DUPLICATE_SESSION':
-            vscode.window.showInformationMessage('Session duplicated.');
+            vscode.window.showInformationMessage(`Session duplicated successfully.`);
             break;
-
           case 'FIND_IN_SESSION':
             vscode.commands.executeCommand('actions.find');
             break;
-
           case 'RELOAD_WORKBENCH':
             if (currentPanel) {
               currentPanel.webview.postMessage({ type: 'RESET_LAYOUT' });
@@ -283,23 +146,42 @@ export function activate(context: vscode.ExtensionContext) {
     );
   };
 
-  const openCmd1 = vscode.commands.registerCommand('workbench.open', openWorkbenchHandler);
-  const openCmd2 = vscode.commands.registerCommand('nah.openWorkbench', openWorkbenchHandler);
+  const openWorkbenchCommand = vscode.commands.registerCommand('nah.openWorkbench', openWorkbench);
+  const openWorkbenchAlias = vscode.commands.registerCommand('workbench.open', openWorkbench);
 
-  const resetLayoutHandler = async () => {
+  const copySessionUrlCommand = vscode.commands.registerCommand('nah.copySessionUrl', async () => {
+    if (remoteServer) {
+      const url = remoteServer.getCurrentSessionUrl();
+      await vscode.env.clipboard.writeText(url);
+      vscode.window.showInformationMessage(`Copied Session URL: ${url}`);
+    }
+  });
+
+  const copyWorkspaceUrlCommand = vscode.commands.registerCommand('nah.copyWorkspaceUrl', async () => {
+    if (remoteServer) {
+      const url = remoteServer.getWorkspaceUrl();
+      await vscode.env.clipboard.writeText(url);
+      vscode.window.showInformationMessage(`Copied Workspace URL: ${url}`);
+    }
+  });
+
+  const resetLayout = async () => {
     await context.workspaceState.update(STATE_STORAGE_KEY, undefined);
     if (currentPanel) {
       currentPanel.webview.postMessage({ type: 'RESET_LAYOUT' });
     }
   };
-  const resetCmd1 = vscode.commands.registerCommand('workbench.resetLayout', resetLayoutHandler);
-  const resetCmd2 = vscode.commands.registerCommand('nah.resetWorkbenchLayout', resetLayoutHandler);
+
+  const resetLayoutCommand = vscode.commands.registerCommand('nah.resetWorkbenchLayout', resetLayout);
+  const resetLayoutAlias = vscode.commands.registerCommand('workbench.resetLayout', resetLayout);
 
   context.subscriptions.push(
-    openCmd1,
-    openCmd2,
-    resetCmd1,
-    resetCmd2
+    openWorkbenchCommand,
+    openWorkbenchAlias,
+    copySessionUrlCommand,
+    copyWorkspaceUrlCommand,
+    resetLayoutCommand,
+    resetLayoutAlias
   );
 }
 

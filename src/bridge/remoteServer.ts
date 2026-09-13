@@ -2,6 +2,7 @@ import * as http from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { WebSocketServer, WebSocket } from 'ws';
 
 export interface RemoteServerOptions {
   port?: number;
@@ -11,11 +12,12 @@ export interface RemoteServerOptions {
 
 export class RemoteControlServer {
   private server: http.Server | null = null;
+  private wss: WebSocketServer | null = null;
   private port: number = 4545;
   private shareCode: string = '';
   private extensionPath: string;
   private onClientMessage?: (msg: any) => void;
-  private sseClients: Set<http.ServerResponse> = new Set();
+  private connectedSockets: Set<WebSocket> = new Set();
 
   constructor(options: RemoteServerOptions) {
     this.port = options.port || 4545;
@@ -69,6 +71,38 @@ export class RemoteControlServer {
         this.handleHttpRequest(req, res);
       });
 
+      this.wss = new WebSocketServer({ server: this.server, path: '/ws' });
+
+      this.wss.on('connection', (ws: WebSocket) => {
+        this.connectedSockets.add(ws);
+
+        ws.on('message', (data: string) => {
+          try {
+            const parsed = JSON.parse(data.toString());
+            if (this.onClientMessage) {
+              this.onClientMessage(parsed);
+            }
+          } catch (e) {
+            console.error('[RemoteServer] Invalid WebSocket payload:', e);
+          }
+        });
+
+        ws.on('close', () => {
+          this.connectedSockets.delete(ws);
+        });
+
+        // Send initial connection ack
+        ws.send(
+          JSON.stringify({
+            type: 'CONNECTED',
+            payload: {
+              port: this.port,
+              shareCode: this.shareCode,
+            },
+          })
+        );
+      });
+
       this.server.listen(this.port, '0.0.0.0', () => {
         console.log(`[RemoteServer] Running on http://0.0.0.0:${this.port}`);
         resolve(this.port);
@@ -87,57 +121,8 @@ export class RemoteControlServer {
   }
 
   private handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse) {
-    const urlObj = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-    const urlPath = urlObj.pathname;
+    const urlPath = req.url?.split('?')[0] || '/';
 
-    // CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-    if (req.method === 'OPTIONS') {
-      res.writeHead(204);
-      res.end();
-      return;
-    }
-
-    // SSE Stream endpoint for remote clients
-    if (urlPath === '/api/events') {
-      res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      });
-      res.write(`data: ${JSON.stringify({ type: 'CONNECTED', port: this.port, shareCode: this.shareCode })}\n\n`);
-      this.sseClients.add(res);
-
-      req.on('close', () => {
-        this.sseClients.delete(res);
-      });
-      return;
-    }
-
-    // Message POST endpoint
-    if (urlPath === '/api/message' && req.method === 'POST') {
-      let body = '';
-      req.on('data', (c) => (body += c));
-      req.on('end', () => {
-        try {
-          const parsed = JSON.parse(body);
-          if (this.onClientMessage) {
-            this.onClientMessage(parsed);
-          }
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true }));
-        } catch (e: any) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: e.message }));
-        }
-      });
-      return;
-    }
-
-    // Serve HTML
     if (urlPath === '/' || urlPath === '/index.html') {
       const indexPath = path.join(this.extensionPath, 'index.html');
       if (fs.existsSync(indexPath)) {
@@ -147,7 +132,6 @@ export class RemoteControlServer {
       }
     }
 
-    // Serve static dist files
     if (urlPath.startsWith('/dist/')) {
       const filePath = path.join(this.extensionPath, urlPath);
       if (fs.existsSync(filePath)) {
@@ -186,23 +170,20 @@ export class RemoteControlServer {
   }
 
   public broadcast(message: any) {
-    const data = `data: ${JSON.stringify(message)}\n\n`;
-    for (const client of this.sseClients) {
-      try {
-        client.write(data);
-      } catch {
-        this.sseClients.delete(client);
+    const data = JSON.stringify(message);
+    for (const client of this.connectedSockets) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(data);
       }
     }
   }
 
   public stop() {
-    for (const client of this.sseClients) {
-      try {
-        client.end();
-      } catch {}
+    for (const client of this.connectedSockets) {
+      client.close();
     }
-    this.sseClients.clear();
+    this.connectedSockets.clear();
+    this.wss?.close();
     this.server?.close();
   }
 }

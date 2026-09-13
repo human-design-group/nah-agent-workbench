@@ -13,8 +13,6 @@ interface AgentCardProps {
   onSendMessage: (text: string, attachments?: any[]) => void;
   onSelectModel: (model: string) => void;
   onSelectPermissions: (mode: string) => void;
-  onAttachContext?: (type: 'file' | 'git-diff' | 'terminal') => void;
-  onRemoveContext?: (itemId: string) => void;
   onFork: () => void;
   onNewSession: () => void;
   onFindInSession?: (agentId: string) => void;
@@ -33,8 +31,6 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   onSendMessage,
   onSelectModel,
   onSelectPermissions,
-  onAttachContext,
-  onRemoveContext,
   onFork,
   onNewSession,
   onFindInSession,
@@ -68,8 +64,6 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         onSendMessage={onSendMessage}
         onSelectModel={onSelectModel}
         onSelectPermissions={onSelectPermissions}
-        onAttachContext={onAttachContext}
-        onRemoveContext={onRemoveContext}
       />
       <AgentDrawer
         agent={agent}

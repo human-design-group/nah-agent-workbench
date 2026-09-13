@@ -13,8 +13,6 @@ interface GridContainerProps {
   onSendMessage: (agentId: string, text: string, attachments?: any[]) => void;
   onSelectModel: (agentId: string, model: string) => void;
   onSelectPermissions: (agentId: string, mode: string) => void;
-  onAttachContext?: (agentId: string, type: 'file' | 'git-diff' | 'terminal') => void;
-  onRemoveContext?: (agentId: string, itemId: string) => void;
   onForkSession: (agentId: string) => void;
   onNewSession: (agentId: string) => void;
   onFindInSession?: (agentId: string) => void;
@@ -33,8 +31,6 @@ export const GridContainer: React.FC<GridContainerProps> = ({
   onSendMessage,
   onSelectModel,
   onSelectPermissions,
-  onAttachContext,
-  onRemoveContext,
   onForkSession,
   onNewSession,
   onFindInSession,
@@ -66,8 +62,6 @@ export const GridContainer: React.FC<GridContainerProps> = ({
         onSendMessage={(text, attachments) => onSendMessage(agent.id, text, attachments)}
         onSelectModel={(model) => onSelectModel(agent.id, model)}
         onSelectPermissions={(mode) => onSelectPermissions(agent.id, mode)}
-        onAttachContext={(type) => onAttachContext && onAttachContext(agent.id, type)}
-        onRemoveContext={(itemId) => onRemoveContext && onRemoveContext(agent.id, itemId)}
         onFork={() => onForkSession(agent.id)}
         onNewSession={() => onNewSession(agent.id)}
         onFindInSession={onFindInSession}

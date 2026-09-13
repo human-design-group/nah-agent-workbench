@@ -4,23 +4,16 @@ import './styles/main.css';
 import { useWorkbenchState } from './hooks/useWorkbenchState';
 import { ControlBar } from './components/ControlBar';
 import { GridContainer } from './components/GridContainer';
-import { OnboardingModal } from './components/OnboardingModal';
 
 const App: React.FC = () => {
   const {
     state,
-    showOnboarding,
-    setShowOnboarding,
-    requestScan,
-    completeOnboarding,
     setLayoutMode,
     setSessionMode,
     switchAgentSlot,
     addAgentSlot,
     setAgentModel,
     setAgentPermissions,
-    attachContext,
-    removeAttachedContext,
     sendMessageToAgent,
     forkSession,
     newSession,
@@ -44,7 +37,7 @@ const App: React.FC = () => {
         currentSlotKeys={state.panelSlots}
         remoteInfo={state.remoteInfo}
         onReload={reloadWorkbench}
-        onOpenSettings={() => setShowOnboarding(true)}
+        onOpenSettings={() => console.log('Open settings')}
         onExportSession={() => exportSession()}
         onFindInSession={() => findInSession()}
         onDuplicateSession={() => duplicateSession()}
@@ -59,26 +52,15 @@ const App: React.FC = () => {
         onSendMessage={sendMessageToAgent}
         onSelectModel={setAgentModel}
         onSelectPermissions={setAgentPermissions}
-        onAttachContext={attachContext}
-        onRemoveContext={removeAttachedContext}
         onForkSession={forkSession}
         onNewSession={newSession}
         onFindInSession={findInSession}
         onExportSession={exportSession}
         onDuplicateSession={duplicateSession}
-        onClearSession={(agentId) => newSession(agentId)}
+        onClearSession={(agentId) => console.log('Clear session for', agentId)}
         onClosePanel={closeAgentPanel}
-        onAddAgentClick={() => addAgentSlot('astro')}
+        onAddAgentClick={() => addAgentSlot('humano')}
       />
-
-      {showOnboarding && (
-        <OnboardingModal
-          scan={state.environmentScan}
-          onRefreshScan={requestScan}
-          onComplete={completeOnboarding}
-          onClose={() => setShowOnboarding(false)}
-        />
-      )}
     </div>
   );
 };
