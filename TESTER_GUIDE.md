@@ -13,25 +13,26 @@ Agent Workbench brings a multi-agent grid right inside your Cursor or VS Code ed
 
 ## 2. Installation Instructions (macOS & Windows)
 
-The provided **`nah-workbench-0.1.0.vsix`** package is a universal cross-platform extension.
+The provided **`agent-workbench-0.1.0.vsix`** package is a universal cross-platform extension.
 
 ### Method A: Install via Cursor Graphical Interface (Recommended)
 1. Open **Cursor**.
 2. Press `Cmd + Shift + X` (macOS) or `Ctrl + Shift + X` (Windows) to open the **Extensions** sidebar.
 3. Click the **`...`** (More Actions) menu at the very top right of the Extensions panel.
 4. Select **`Install from VSIX...`**.
-5. Browse and select the **`nah-workbench-0.1.0.vsix`** file.
+5. Browse and select the **`agent-workbench-0.1.0.vsix`** file.
 6. A notification will appear in the bottom right:  
-   `Extension 'nah-workbench-0.1.0.vsix' was successfully installed.`
+   `Extension 'agent-workbench-0.1.0.vsix' was successfully installed.`
+7. **Important:** Run `Developer: Reload Window` (`Cmd+R` / `Ctrl+R`) to refresh Cursor's extension host.
 
 ### Method B: Install via Terminal / PowerShell
 - **On macOS (Terminal):**
   ```bash
-  cursor --install-extension nah-workbench-0.1.0.vsix --force
+  cursor --install-extension agent-workbench-0.1.0.vsix --force
   ```
 - **On Windows (PowerShell or Command Prompt):**
   ```powershell
-  cursor --install-extension .\nah-workbench-0.1.0.vsix --force
+  cursor --install-extension .\agent-workbench-0.1.0.vsix --force
   ```
 
 ---
@@ -41,7 +42,7 @@ The provided **`nah-workbench-0.1.0.vsix`** package is a universal cross-platfor
 1. Open the Command Palette:
    - **macOS:** `Cmd + Shift + P` (Shortcut: `Cmd + Alt + N`)
    - **Windows:** `Ctrl + Shift + P` (Shortcut: `Ctrl + Alt + N`)
-2. Select: **`notahuman: Open Multi-Agent Workbench`**.
+2. Select: **`Agent Workbench: Open Multi-Agent Mission Control`**.
 3. The **Setup Wizard** will automatically launch:
    - **Step 1:** Welcome & Feature Overview.
    - **Step 2 (Auto-Detection):** Automatically scans your `PATH` on macOS or Windows and highlights your installed tools (e.g., **Cursor Agent** and **ChatGPT / Codex** will display green checkmarks!).

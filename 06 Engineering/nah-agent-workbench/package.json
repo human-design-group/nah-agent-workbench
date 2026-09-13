@@ -1,9 +1,17 @@
 {
-  "name": "nah-workbench",
-  "displayName": "notahuman Agent Workbench",
-  "description": "Unified Multi-Agent Mission Control & Responsive Grid for Cursor and VS Code (AgentOS Prototype)",
+  "name": "agent-workbench",
+  "displayName": "Agent Workbench",
+  "description": "Multi-Agent Mission Control & Responsive Grid for Cursor and VS Code",
   "version": "0.1.0",
-  "publisher": "notahuman",
+  "publisher": "human-design-group",
+  "author": {
+    "name": "Human Design Group",
+    "url": "https://thehumandesigngroup.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/human-design-group/nah-agent-workbench.git"
+  },
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
@@ -11,60 +19,69 @@
   "categories": [
     "AI",
     "Chat",
+    "Programming Languages",
     "Other"
   ],
   "keywords": [
     "agent",
     "multi-agent",
     "workbench",
-    "notahuman",
-    "antigravity",
-    "openclaw",
+    "cursor",
+    "claude",
+    "codex",
     "opencode",
     "hermes",
-    "acp"
+    "openclaw"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
+    "onCommand:workbench.open",
     "onCommand:nah.openWorkbench"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "nah.openWorkbench",
-        "title": "notahuman: Open Multi-Agent Workbench",
-        "category": "notahuman",
+        "command": "workbench.open",
+        "title": "Open Multi-Agent Mission Control",
+        "category": "Agent Workbench",
         "icon": "$(layout-grid)"
       },
       {
-        "command": "nah.resetWorkbenchLayout",
-        "title": "notahuman: Reset Workbench Layout",
-        "category": "notahuman"
+        "command": "nah.openWorkbench",
+        "title": "Open Multi-Agent Mission Control (Legacy)",
+        "category": "Agent Workbench"
+      },
+      {
+        "command": "workbench.resetLayout",
+        "title": "Reset Workbench Layout",
+        "category": "Agent Workbench"
       }
     ],
     "keybindings": [
       {
-        "command": "nah.openWorkbench",
+        "command": "workbench.open",
         "key": "cmd+alt+n",
-        "mac": "cmd+alt+n"
+        "mac": "cmd+alt+n",
+        "win": "ctrl+alt+n",
+        "linux": "ctrl+alt+n"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "nah.openWorkbench"
+          "command": "workbench.open"
         },
         {
-          "command": "nah.resetWorkbenchLayout"
+          "command": "workbench.resetLayout"
         }
       ]
     },
     "configuration": {
-      "title": "notahuman Workbench",
+      "title": "Agent Workbench",
       "properties": {
-        "nahWorkbench.defaultLayout": {
+        "agentWorkbench.defaultLayout": {
           "type": "string",
-          "enum": ["vertical", "horizontal", "grid"],
+          "enum": ["vertical", "horizontal", "grid", "split-3", "focus"],
           "default": "vertical",
           "description": "Default multi-agent layout mode"
         }
@@ -75,8 +92,8 @@
     "build": "node build.mjs",
     "watch": "node build.mjs --watch",
     "typecheck": "tsc --noEmit",
-    "package": "node build.mjs && npx @vscode/vsce package --no-dependencies -o dist/nah-workbench-0.1.0.vsix",
-    "install-ext": "npm run package && cursor --install-extension dist/nah-workbench-0.1.0.vsix --force"
+    "package": "node build.mjs && npx @vscode/vsce package --no-dependencies -o dist/agent-workbench-0.1.0.vsix",
+    "install-ext": "npm run package && cursor --install-extension dist/agent-workbench-0.1.0.vsix --force"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",

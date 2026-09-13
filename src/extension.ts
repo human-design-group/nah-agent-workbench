@@ -40,14 +40,14 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 2. Status Bar Item
   statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  statusBarItem.command = 'nah.openWorkbench';
+  statusBarItem.command = 'workbench.open';
   statusBarItem.text = '$(hubot) Workbench:4545';
-  statusBarItem.tooltip = 'Agent Workbench Bridge Active (Click to open)';
+  statusBarItem.tooltip = 'Agent Workbench (Click to open)';
   statusBarItem.show();
   context.subscriptions.push(statusBarItem);
 
   // 3. Register Commands
-  const openWorkbenchCommand = vscode.commands.registerCommand('nah.openWorkbench', async () => {
+  const openWorkbenchHandler = async () => {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -58,7 +58,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     currentPanel = vscode.window.createWebviewPanel(
-      'nahWorkbench',
+      'agentWorkbench',
       'Agent Workbench',
       column || vscode.ViewColumn.One,
       {
@@ -281,25 +281,25 @@ export function activate(context: vscode.ExtensionContext) {
       null,
       context.subscriptions
     );
-  });
+  };
 
-  const runSetupWizardCommand = vscode.commands.registerCommand('nah.runSetupWizard', async () => {
-    if (currentPanel) {
-      currentPanel.webview.postMessage({ type: 'REQUEST_ENVIRONMENT_SCAN' });
-    }
-  });
+  const openCmd1 = vscode.commands.registerCommand('workbench.open', openWorkbenchHandler);
+  const openCmd2 = vscode.commands.registerCommand('nah.openWorkbench', openWorkbenchHandler);
 
-  const resetLayoutCommand = vscode.commands.registerCommand('nah.resetWorkbenchLayout', async () => {
+  const resetLayoutHandler = async () => {
     await context.workspaceState.update(STATE_STORAGE_KEY, undefined);
     if (currentPanel) {
       currentPanel.webview.postMessage({ type: 'RESET_LAYOUT' });
     }
-  });
+  };
+  const resetCmd1 = vscode.commands.registerCommand('workbench.resetLayout', resetLayoutHandler);
+  const resetCmd2 = vscode.commands.registerCommand('nah.resetWorkbenchLayout', resetLayoutHandler);
 
   context.subscriptions.push(
-    openWorkbenchCommand,
-    runSetupWizardCommand,
-    resetLayoutCommand
+    openCmd1,
+    openCmd2,
+    resetCmd1,
+    resetCmd2
   );
 }
 
