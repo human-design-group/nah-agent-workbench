@@ -13,7 +13,7 @@ let statusBarItem: vscode.StatusBarItem | undefined = undefined;
 const STATE_STORAGE_KEY = 'nahWorkbench.persistedState';
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('notahuman Agent Workbench extension activated');
+  console.log('Agent Workbench extension activated');
 
   // 1. Initialize Remote Control Server
   remoteServer = new RemoteControlServer({
@@ -42,7 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
   statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBarItem.command = 'nah.openWorkbench';
   statusBarItem.text = '$(hubot) Workbench:4545';
-  statusBarItem.tooltip = 'Agent Workbench Remote Bridge Active (Click to open)';
+  statusBarItem.tooltip = 'Agent Workbench Bridge Active (Click to open)';
   statusBarItem.show();
   context.subscriptions.push(statusBarItem);
 
@@ -130,6 +130,8 @@ export function activate(context: vscode.ExtensionContext) {
             existing.isOnboarded = true;
             existing.sessionMode = message.payload.teamMode;
             existing.panelSlots = message.payload.selectedAgents;
+            if (message.payload.apiKey) existing.globalApiKey = message.payload.apiKey;
+            if (message.payload.apiEndpoint) existing.globalApiEndpoint = message.payload.apiEndpoint;
             await context.workspaceState.update(STATE_STORAGE_KEY, existing);
             vscode.window.showInformationMessage('Agent Workbench setup complete! Mission Control ready.');
             break;
@@ -166,7 +168,7 @@ export function activate(context: vscode.ExtensionContext) {
                 type: 'CONTEXT_ATTACHED',
                 payload: { agentId, item: attachedItem },
               });
-              vscode.window.showInformationMessage(`Attached [${attachedItem.type}] ${attachedItem.title} to ${agentId}`);
+              vscode.window.showInformationMessage(`Attached [${attachedItem.type}] ${attachedItem.title}`);
             } else {
               vscode.window.showWarningMessage('No active editor selection or workspace diff available to attach.');
             }
@@ -174,17 +176,20 @@ export function activate(context: vscode.ExtensionContext) {
           }
 
           case 'SEND_AGENT_MESSAGE': {
-            const { agentId, text, model, attachments } = message.payload;
+            const { agentId, agentKey, text, model, attachments } = message.payload;
             const saved = context.workspaceState.get<WorkbenchState>(STATE_STORAGE_KEY);
-            const agentConfig = saved?.agents?.find((a) => a.id === agentId || a.key === agentId);
+            const agentConfig = saved?.agents?.find((a) => a.id === agentId || a.key === agentId || a.key === agentKey);
             const history = agentConfig?.messages || [];
 
             await AgentRunner.executeAgentPrompt({
               agentId,
               agentName: agentConfig?.name || agentId,
+              agentKey: agentKey || agentConfig?.key || 'cursor-agent',
               userPrompt: text,
               history,
               model: model || agentConfig?.selectedModel,
+              apiEndpoint: agentConfig?.apiEndpoint || saved?.globalApiEndpoint,
+              apiKey: agentConfig?.apiKey || saved?.globalApiKey,
               contextAttachments: attachments,
               onChunk: (delta, fullContent) => {
                 if (currentPanel) {
@@ -203,28 +208,14 @@ export function activate(context: vscode.ExtensionContext) {
                 }
               },
               onError: (err) => {
-                vscode.window.showErrorMessage(`Agent execution error (${agentId}): ${err.message}`);
-                if (currentPanel) {
-                  currentPanel.webview.postMessage({
-                    type: 'AGENT_MESSAGE_RECEIVED',
-                    payload: {
-                      agentId,
-                      message: {
-                        id: 'err_' + Date.now(),
-                        sender: 'system',
-                        content: `⚠️ Error executing prompt: ${err.message}`,
-                        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                      },
-                    },
-                  });
-                }
+                vscode.window.showErrorMessage(`Agent execution notice: ${err.message}`);
               },
             });
             break;
           }
 
           case 'LOG':
-            console.log(`[nah-workbench webview ${message.payload.level}] ${message.payload.message}`);
+            console.log(`[Agent Workbench webview ${message.payload.level}] ${message.payload.message}`);
             break;
 
           case 'EXECUTE_COMMAND':
@@ -254,18 +245,18 @@ export function activate(context: vscode.ExtensionContext) {
             const saved = context.workspaceState.get<WorkbenchState>(STATE_STORAGE_KEY);
             const markdown = `# Agent Workbench Session Export\n\nGenerated: ${new Date().toISOString()}\n\n` +
               (saved?.agents || [])
-                .map((a) => `## Agent: ${a.name} (${a.runtime})\nModel: ${a.selectedModel}\n\n` +
+                .map((a) => `## Agent: ${a.name} (${a.provider} / ${a.runtime})\nModel: ${a.selectedModel}\n\n` +
                   a.messages.map((m) => `**[${m.timestamp}] ${m.sender.toUpperCase()}:**\n${m.content}\n`).join('\n'))
                 .join('\n\n---\n\n');
 
             const doc = await vscode.workspace.openTextDocument({ content: markdown, language: 'markdown' });
             await vscode.window.showTextDocument(doc);
-            vscode.window.showInformationMessage('Session exported to new Markdown document.');
+            vscode.window.showInformationMessage('Session exported to Markdown.');
             break;
           }
 
           case 'DUPLICATE_SESSION':
-            vscode.window.showInformationMessage('Session duplicated successfully.');
+            vscode.window.showInformationMessage('Session duplicated.');
             break;
 
           case 'FIND_IN_SESSION':

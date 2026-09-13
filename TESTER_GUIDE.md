@@ -1,72 +1,81 @@
-# Agent Workbench — Private Beta Tester Guide
+# Agent Workbench — Private Beta Tester Guide (macOS & Windows)
 
-Welcome to the private beta test of **Agent Workbench** by **Human Design Group**!  
-This guide walks you through installing and testing the extension in **Cursor** or **VS Code**.
+Welcome to the private beta of **Agent Workbench** by **Human Design Group**!  
+Agent Workbench brings a multi-agent grid right inside your Cursor or VS Code editor on **macOS** and **Windows**.
 
 ---
 
 ## 1. Prerequisites
-- **Cursor** (or VS Code) version `1.85.0` or later.
-- (Optional but recommended) Local AI Gateway / CLIs:
-  - OmniRoute running on `http://localhost:20128` (or direct OpenAI / Anthropic / Gemini API keys).
-  - Any installed agent CLIs (`gemini`, `openclaw`, `hermes`, `opencode`, or `claude`).
+- **Cursor** (or VS Code) version `1.85.0` or higher (macOS or Windows).
+- Your standard coding tools (e.g. Cursor Agent, ChatGPT / Codex, Claude Code, or direct API keys).
 
 ---
 
-## 2. Installation (1-Minute Setup)
+## 2. Installation Instructions (macOS & Windows)
 
-### Option A: Via Cursor UI (Drag & Drop)
+The provided **`nah-workbench-0.1.0.vsix`** package is a universal cross-platform extension.
+
+### Method A: Install via Cursor Graphical Interface (Recommended)
 1. Open **Cursor**.
-2. Open the **Extensions** view (`Cmd + Shift + X` on macOS, `Ctrl + Shift + X` on Windows/Linux).
-3. Click the `...` (Views and More Actions) menu in the top-right corner of the Extensions sidebar.
-4. Select **Install from VSIX...**
-5. Choose the provided **`nah-workbench-0.1.0.vsix`** file.
-6. A notification will confirm: `Extension 'nah-workbench-0.1.0.vsix' was successfully installed.`
+2. Press `Cmd + Shift + X` (macOS) or `Ctrl + Shift + X` (Windows) to open the **Extensions** sidebar.
+3. Click the **`...`** (More Actions) menu at the very top right of the Extensions panel.
+4. Select **`Install from VSIX...`**.
+5. Browse and select the **`nah-workbench-0.1.0.vsix`** file.
+6. A notification will appear in the bottom right:  
+   `Extension 'nah-workbench-0.1.0.vsix' was successfully installed.`
 
-### Option B: Via Terminal
-```bash
-cursor --install-extension nah-workbench-0.1.0.vsix --force
-```
+### Method B: Install via Terminal / PowerShell
+- **On macOS (Terminal):**
+  ```bash
+  cursor --install-extension nah-workbench-0.1.0.vsix --force
+  ```
+- **On Windows (PowerShell or Command Prompt):**
+  ```powershell
+  cursor --install-extension .\nah-workbench-0.1.0.vsix --force
+  ```
 
 ---
 
-## 3. First Launch & Setup Wizard
+## 3. First-Launch Onboarding Wizard
 
-1. Open the Command Palette (`Cmd + Shift + P` or `Ctrl + Shift + P`).
-2. Type and select: **`notahuman: Open Multi-Agent Workbench`** (Shortcut: `Cmd + Option + N`).
-3. You will be greeted by the **Agent Workbench Setup Wizard**:
-   - **Step 1:** Welcome & Overview.
-   - **Step 2 (Auto-Scan):** Scans your environment for installed agent CLIs and detects your local gateway connection status.
-   - **Step 3:** Model routing and auto-compression overview.
-   - **Step 4:** Choose your initial layout (Team Mode vs Independent) and select your active agents.
+1. Open the Command Palette:
+   - **macOS:** `Cmd + Shift + P` (Shortcut: `Cmd + Alt + N`)
+   - **Windows:** `Ctrl + Shift + P` (Shortcut: `Ctrl + Alt + N`)
+2. Select: **`notahuman: Open Multi-Agent Workbench`**.
+3. The **Setup Wizard** will automatically launch:
+   - **Step 1:** Welcome & Feature Overview.
+   - **Step 2 (Auto-Detection):** Automatically scans your `PATH` on macOS or Windows and highlights your installed tools (e.g., **Cursor Agent** and **ChatGPT / Codex** will display green checkmarks!).
+   - **Step 3 (Model Setup):** Choose between local tools/gateways or enter your API key (OpenAI, Anthropic, OpenRouter) if you want direct BYOK execution.
+   - **Step 4 (Team Selection):** Choose your active slots (e.g. **Cursor Agent**, **ChatGPT / Codex**, **Claude Code**, **OpenCode**) and select **Team Mode** or **Independent Panels**.
 4. Click **Launch Workbench**.
 
 ---
 
-## 4. Key Features to Test
+## 4. Key Workflows to Test
 
 ### 1. Dynamic Layouts & Resizing
-- Switch between **Vertical Columns (1x4)**, **2x2 Grid**, **3-Column Split**, **Horizontal Rows**, and **1x1 Focus Mode** using the top-left layout picker.
-- Drag the resize gutters between panels to resize cards dynamically.
+- Use the layout picker in the top-left corner to switch between:
+  - **Vertical Columns (1x4)**
+  - **2x2 Grid**
+  - **3-Column Split**
+  - **Horizontal Rows**
+  - **1x1 Focus Mode**
+- Drag the gutters between panels to test fluid resizing.
 
-### 2. Live Multi-Agent Execution & Streaming
-- Type prompts to **Astro**, **Humano**, **Uno**, or **Omo**.
-- Observe real-time token streaming, thinking process dropdowns, and response metrics.
-- Attach editor files, git diffs, or terminal output using the **`+` (Add Context)** button.
+### 2. Live Chat & Code Prompting
+- Ask coding questions in the **Cursor Agent** or **ChatGPT / Codex** panels.
+- Click the **`+` (Add Context)** button next to the composer to attach your current active file, selection, or workspace git diff.
 
-### 3. Session Modes & Team Lead Orchestration
-- Click **Session Mode** in the top header to toggle between **Team Mode** (shared project directory + designated Team Lead) and **Independent Agents**.
-
-### 4. Remote Control Server
-- Agent Workbench automatically boots a local bridge server on port `4545`.
-- Click the top-right **More (...)** menu -> **Copy Session URL** or **Copy Share Code** to mirror the workbench in an external browser or mobile device on your local network.
+### 3. Session & Remote Mirroring
+- Open the **More (...)** menu in the top right.
+- Click **Copy Session URL** or **Copy Share Code** to mirror the workbench in an external browser or mobile device on your local network (running on port `4545`).
 
 ---
 
-## 5. Feedback & Reporting Issues
-If you encounter any glitches, formatting issues, or feature suggestions, please note:
-- Your OS version & Cursor version.
-- Which layout mode was active.
-- Screenshot or error log from the Developer Tools console (`Help -> Toggle Developer Tools`).
+## 5. Feedback & Issue Reporting
+If you notice any UI glitches, layout clipping, or behavior bugs on either macOS or Windows, please share:
+1. OS (e.g. macOS Sonoma / Windows 11) & Cursor Version.
+2. The active layout mode.
+3. Console errors from `Help -> Toggle Developer Tools -> Console` (if any).
 
-Thank you for testing Agent Workbench!
+Thank you for helping us test Agent Workbench!

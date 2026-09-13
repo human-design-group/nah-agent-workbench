@@ -58,13 +58,17 @@ export interface AgentConfig {
   id: string;
   key: string;
   name: string;
+  provider: string;
   runtime: string;
+  category: 'coding' | 'general' | 'terminal' | 'local' | 'ide';
   sessionName: string;
   sessionId: string;
   status: AgentStatus;
   viewMode: AgentViewMode;
   selectedModel: string;
   permissionsMode: string;
+  apiEndpoint?: string;
+  apiKey?: string;
   gitStatus: GitStatusInfo;
   messages: AgentChatMessage[];
   projects?: AgentProject[];
@@ -88,18 +92,22 @@ export interface RemoteShareInfo {
 export interface DetectedAgentRuntime {
   id: string;
   name: string;
+  provider: string;
   cliName: string;
+  category: 'coding' | 'general' | 'terminal' | 'local' | 'ide';
   installed: boolean;
   version?: string;
   binPath?: string;
   status: 'ready' | 'missing' | 'error';
   description: string;
-  installCommand?: string;
+  installCommand: string;
+  docsUrl: string;
 }
 
 export interface GatewayStatus {
   connected: boolean;
   endpoint: string;
+  type?: 'omniroute' | 'ollama' | 'openai-compatible' | 'none';
   version?: string;
   providerCount?: number;
   activeModelCount?: number;
@@ -108,11 +116,15 @@ export interface GatewayStatus {
 
 export interface SystemEnvironmentScan {
   timestamp: string;
-  platform: string;
+  platform: 'darwin' | 'win32' | 'linux';
+  platformName: string;
+  arch: string;
   workspacePath?: string;
   gitDetected: boolean;
+  gitVersion?: string;
   gateway: GatewayStatus;
   agents: DetectedAgentRuntime[];
+  hasAnyCliInstalled: boolean;
   recommendedTeamMode: 'independent' | 'team';
 }
 
@@ -128,12 +140,14 @@ export interface WorkbenchState {
   remoteInfo?: RemoteShareInfo;
   isOnboarded?: boolean;
   environmentScan?: SystemEnvironmentScan;
+  globalApiEndpoint?: string;
+  globalApiKey?: string;
 }
 
 export type WebviewToHostMessage =
   | { type: 'SAVE_STATE'; payload: WorkbenchState }
   | { type: 'LOG'; payload: { level: 'info' | 'warn' | 'error'; message: string } }
-  | { type: 'SEND_AGENT_MESSAGE'; payload: { agentId: string; text: string; model?: string; attachments?: AttachedContextItem[] } }
+  | { type: 'SEND_AGENT_MESSAGE'; payload: { agentId: string; agentKey: string; text: string; model?: string; attachments?: AttachedContextItem[] } }
   | { type: 'BROADCAST_MESSAGE'; payload: { text: string; targetAgentIds: string[] } }
   | { type: 'FORK_SESSION'; payload: { agentId: string } }
   | { type: 'NEW_SESSION'; payload: { agentId: string } }
@@ -149,7 +163,7 @@ export type WebviewToHostMessage =
   | { type: 'COPY_REMOTE_URL'; payload: { target: 'session' | 'workspace' | 'shareCode'; agentId?: string } }
   | { type: 'REQUEST_ENVIRONMENT_SCAN' }
   | { type: 'REQUEST_ATTACH_CONTEXT'; payload: { agentId: string; type: 'file' | 'git-diff' | 'terminal' } }
-  | { type: 'COMPLETE_ONBOARDING'; payload: { teamMode: SessionMode; selectedAgents: string[] } }
+  | { type: 'COMPLETE_ONBOARDING'; payload: { teamMode: SessionMode; selectedAgents: string[]; apiKey?: string; apiEndpoint?: string } }
   | { type: 'RELOAD_WORKBENCH' };
 
 export type HostToWebviewMessage =

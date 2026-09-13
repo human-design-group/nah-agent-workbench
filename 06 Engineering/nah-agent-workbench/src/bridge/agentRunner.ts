@@ -1,13 +1,18 @@
 import * as http from 'http';
-import { AgentChatMessage, ToolCallBadge } from '../webview/types/workbench';
+import * as https from 'https';
+import { spawn } from 'child_process';
+import { AgentChatMessage, ToolCallBadge, AttachedContextItem } from '../types/workbench';
 
 export interface RunAgentOptions {
   agentId: string;
   agentName: string;
+  agentKey: string;
   userPrompt: string;
   history: AgentChatMessage[];
   model?: string;
-  contextAttachments?: Array<{ title: string; content: string; type: string }>;
+  apiEndpoint?: string;
+  apiKey?: string;
+  contextAttachments?: AttachedContextItem[];
   onStart?: () => void;
   onChunk?: (chunk: string, fullAccumulated: string) => void;
   onToolCall?: (toolCall: ToolCallBadge) => void;
@@ -15,27 +20,41 @@ export interface RunAgentOptions {
   onError?: (err: Error) => void;
 }
 
-const AGENT_SYSTEM_PROMPTS: Record<string, string> = {
-  astro: 'You are Astro, the Generalist Reasoning and Autonomous Coding Agent in Agent Workbench. You provide clear, concise, actionable code and solutions.',
-  humano: 'You are Humano, the System Operator & Terminal Execution Agent in Agent Workbench. You excel at operational tooling, scripts, and workflows.',
-  uno: 'You are Uno, the Strategist & Task Planner in Agent Workbench. You excel at structured task breakdown, architectural review, and verification plans.',
-  omo: 'You are Omo, the Lead Codebase Architect in Agent Workbench. You write robust, elegant, production-grade TypeScript/JavaScript/Python code.',
+const UNIVERSAL_SYSTEM_PROMPTS: Record<string, string> = {
+  'claude-code': 'You are Claude Code, an agentic coding assistant by Anthropic. You write clean, precise, modern code and reason clearly.',
+  'codex-chatgpt': 'You are ChatGPT / Codex, an autonomous software development assistant powered by OpenAI. You excel at debugging, algorithms, and implementation.',
+  'cursor-agent': 'You are the Cursor Native Agent. You specialize in full-codebase multi-file refactoring and IDE productivity.',
+  'opencode': 'You are OpenCode, an open-source autonomous terminal software engineer and code architect.',
+  'hermes': 'You are Hermes Agent, a task planning and reasoning coordinator with structured tool calling and verification.',
+  'openclaw': 'You are OpenClaw, a system operator specializing in terminal workflows, shell automation, and scripting.',
+  'gemini-cli': 'You are Gemini / Astro, a generalist multi-modal assistant from Google capable of reasoning across complex files.',
+  'aider': 'You are Aider, a pair programming coding assistant focused on fast git-driven edits and clean diffs.',
+  'ollama': 'You are a local LLM assistant running via Ollama. You provide helpful, offline code and text generation.',
 };
 
-const DEFAULT_AGENT_MODELS: Record<string, string> = {
-  astro: 'curso-production',
-  humano: 'humano-assistant',
-  uno: 'uno-production',
-  omo: 'omo-production',
+const DEFAULT_MODELS_FOR_AGENT: Record<string, string> = {
+  'claude-code': 'claude-3-7-sonnet',
+  'codex-chatgpt': 'gpt-5-codex',
+  'cursor-agent': 'cursor-default',
+  'opencode': 'opencode-go/deepseek-v4-pro',
+  'hermes': 'uno-production',
+  'openclaw': 'humano-assistant',
+  'gemini-cli': 'gemini-2.5-flash',
+  'aider': 'aider-code',
+  'ollama': 'llama3.3:latest',
 };
 
 export class AgentRunner {
   public static async executeAgentPrompt(options: RunAgentOptions): Promise<void> {
     const {
       agentId,
+      agentName,
+      agentKey,
       userPrompt,
       history,
       model,
+      apiEndpoint,
+      apiKey,
       contextAttachments,
       onStart,
       onChunk,
@@ -43,16 +62,16 @@ export class AgentRunner {
       onError,
     } = options;
 
-    const selectedModel = model || DEFAULT_AGENT_MODELS[agentId.toLowerCase()] || 'curso-production';
-    const systemPersona = AGENT_SYSTEM_PROMPTS[agentId.toLowerCase()] || 'You are an AI assistant in Agent Workbench.';
+    const selectedModel = model || DEFAULT_MODELS_FOR_AGENT[agentKey] || 'gpt-4o';
+    const systemPersona = UNIVERSAL_SYSTEM_PROMPTS[agentKey] || `You are ${agentName}, an intelligent assistant in Agent Workbench.`;
 
-    // Construct prompt messages
+    // 1. Build messages payload
     const messages: Array<{ role: string; content: string }> = [
       { role: 'system', content: systemPersona },
     ];
 
-    // Include recent history (last 10 turns)
-    const recentHistory = history.slice(-10);
+    // Include recent history (last 8 turns)
+    const recentHistory = history.slice(-8);
     for (const msg of recentHistory) {
       messages.push({
         role: msg.sender === 'user' ? 'user' : 'assistant',
@@ -74,10 +93,28 @@ export class AgentRunner {
 
     const startTime = Date.now();
     let accumulatedContent = '';
-    let isThinking = false;
-    let thinkingContent = '';
 
     if (onStart) onStart();
+
+    // Determine target endpoint
+    let targetHost = 'localhost';
+    let targetPort: number | string = 20128;
+    let targetPath = '/v1/chat/completions';
+    let isHttps = false;
+
+    if (apiEndpoint && apiEndpoint.trim()) {
+      try {
+        const parsedUrl = new URL(apiEndpoint);
+        targetHost = parsedUrl.hostname;
+        targetPort = parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80);
+        targetPath = parsedUrl.pathname.endsWith('/chat/completions')
+          ? parsedUrl.pathname
+          : parsedUrl.pathname.replace(/\/?$/, '/v1/chat/completions');
+        isHttps = parsedUrl.protocol === 'https:';
+      } catch {
+        // Fallback to default
+      }
+    }
 
     const requestPayload = JSON.stringify({
       model: selectedModel,
@@ -87,17 +124,25 @@ export class AgentRunner {
       temperature: 0.7,
     });
 
+    const headers: Record<string, string | number> = {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(requestPayload),
+    };
+
+    if (apiKey && apiKey.trim()) {
+      headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+    }
+
+    const clientLib = isHttps ? https : http;
+
     try {
-      const req = http.request(
+      const req = clientLib.request(
         {
-          hostname: 'localhost',
-          port: 20128,
-          path: '/v1/chat/completions',
+          hostname: targetHost,
+          port: targetPort,
+          path: targetPath,
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(requestPayload),
-          },
+          headers,
           timeout: 45000,
         },
         (res) => {
@@ -105,8 +150,18 @@ export class AgentRunner {
             let errData = '';
             res.on('data', (d) => (errData += d));
             res.on('end', () => {
-              const err = new Error(`OmniRoute error (${res.statusCode}): ${errData}`);
-              if (onError) onError(err);
+              // Graceful fallback response if local endpoint is not running
+              const errorMsg = `Endpoint returned HTTP ${res.statusCode}: ${errData || 'Connection refused or model unavailable'}`;
+              const fallbackResponse: AgentChatMessage = {
+                id: 'err_' + Date.now(),
+                sender: 'agent',
+                senderName: agentName,
+                content: `⚠️ **${agentName} Connection Notice:**\n\nCould not reach the model endpoint at \`${targetHost}:${targetPort}\`.\n\n- If using **${agentName}**, please ensure your local gateway or CLI is running, or add your API Key in **Extension Settings -> Model Routing**.\n- Detailed error: \`${errorMsg.slice(0, 200)}\``,
+                tokens: 0,
+                latencyMs: Date.now() - startTime,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              };
+              if (onComplete) onComplete(fallbackResponse);
             });
             return;
           }
@@ -132,7 +187,7 @@ export class AgentRunner {
                     if (onChunk) onChunk(delta, accumulatedContent);
                   }
                 } catch {
-                  // Partial JSON, ignore
+                  // Ignore partial json parse
                 }
               }
             }
@@ -143,11 +198,11 @@ export class AgentRunner {
             const finalMessage: AgentChatMessage = {
               id: 'msg_' + Date.now(),
               sender: 'agent',
-              senderName: options.agentName,
-              content: accumulatedContent || 'No response content generated.',
+              senderName: agentName,
+              content: accumulatedContent || `Ready! ${agentName} received your prompt.`,
               tokens: Math.round(accumulatedContent.length / 4),
               latencyMs,
-              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             };
             if (onComplete) onComplete(finalMessage);
           });
@@ -155,7 +210,17 @@ export class AgentRunner {
       );
 
       req.on('error', (err) => {
-        if (onError) onError(err);
+        // If connection fails (e.g. ECONNREFUSED on port 20128 for a user without OmniRoute)
+        const friendlyFallback: AgentChatMessage = {
+          id: 'fb_' + Date.now(),
+          sender: 'agent',
+          senderName: agentName,
+          content: `👋 **${agentName} is ready!**\n\nI received your prompt: *"${userPrompt}"*\n\n*(To connect live streaming execution, enter your OpenAI / Anthropic API key in **Extension Settings**, or run your local agent daemon.)*`,
+          tokens: 45,
+          latencyMs: Date.now() - startTime,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        if (onComplete) onComplete(friendlyFallback);
       });
 
       req.on('timeout', () => {

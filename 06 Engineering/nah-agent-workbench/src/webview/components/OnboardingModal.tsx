@@ -12,13 +12,16 @@ import {
   Layers,
   ShieldCheck,
   Check,
+  Key,
+  Globe,
+  ExternalLink,
 } from 'lucide-react';
 import { SystemEnvironmentScan, DetectedAgentRuntime, SessionMode } from '../types/workbench';
 
 interface OnboardingModalProps {
   scan?: SystemEnvironmentScan;
   onRefreshScan: () => void;
-  onComplete: (teamMode: SessionMode, selectedAgents: string[]) => void;
+  onComplete: (teamMode: SessionMode, selectedAgents: string[], apiKey?: string, apiEndpoint?: string) => void;
   onClose: () => void;
 }
 
@@ -30,12 +33,22 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 }) => {
   const [step, setStep] = useState<number>(1);
   const [selectedMode, setSelectedMode] = useState<SessionMode>('team');
-  const [selectedAgents, setSelectedAgents] = useState<string[]>(['astro', 'humano', 'uno', 'omo']);
+  const [selectedAgents, setSelectedAgents] = useState<string[]>(['cursor-agent', 'codex-chatgpt', 'claude-code', 'opencode']);
   const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [apiKey, setApiKey] = useState<string>('');
+  const [apiEndpoint, setApiEndpoint] = useState<string>('');
+  const [providerType, setProviderType] = useState<'gateway' | 'openai' | 'anthropic' | 'openrouter' | 'custom'>('gateway');
 
   useEffect(() => {
     if (scan?.recommendedTeamMode) {
       setSelectedMode(scan.recommendedTeamMode);
+    }
+    // Auto-select installed agents if detected
+    if (scan?.agents) {
+      const installed = scan.agents.filter((a) => a.installed).map((a) => a.id);
+      if (installed.length >= 2) {
+        setSelectedAgents(installed.slice(0, 4));
+      }
     }
   }, [scan]);
 
@@ -51,7 +64,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         setSelectedAgents(selectedAgents.filter((a) => a !== id));
       }
     } else {
-      setSelectedAgents([...selectedAgents, id]);
+      if (selectedAgents.length < 4) {
+        setSelectedAgents([...selectedAgents, id]);
+      } else {
+        // Replace last item
+        setSelectedAgents([...selectedAgents.slice(0, 3), id]);
+      }
     }
   };
 
@@ -70,9 +88,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     >
       <div
         style={{
-          width: 680,
-          maxWidth: '92vw',
-          maxHeight: '88vh',
+          width: 720,
+          maxWidth: '94vw',
+          maxHeight: '90vh',
           backgroundColor: '#121316',
           border: '1px solid #27282b',
           borderRadius: 12,
@@ -97,8 +115,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div
               style={{
-                width: 32,
-                height: 32,
+                width: 34,
+                height: 34,
                 borderRadius: 8,
                 backgroundColor: 'rgba(56, 139, 253, 0.15)',
                 border: '1px solid rgba(56, 139, 253, 0.3)',
@@ -115,12 +133,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 Agent Workbench Setup Wizard
               </div>
               <div style={{ fontSize: 12, color: '#8b949e' }}>
-                Multi-Agent Responsive Mission Control
+                Universal Multi-Agent Mission Control for Cursor & VS Code
               </div>
             </div>
           </div>
 
-          {/* Step Pills */}
+          {/* Step Progress */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {[1, 2, 3, 4].map((s) => (
               <div
@@ -156,9 +174,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 Welcome to Agent Workbench
               </div>
               <p style={{ fontSize: 13, color: '#8b949e', lineHeight: 1.6, marginBottom: 20 }}>
-                Agent Workbench transforms Cursor and VS Code into an integrated mission control center.
-                Orchestrate multiple specialized autonomous agents side-by-side with real-time responsive grids,
-                live git worktrees, and unified model routing.
+                Agent Workbench gives you a synchronized multi-agent grid right inside your editor. Run
+                multiple AI coding agents (Claude Code, ChatGPT/Codex, Cursor Agent, OpenCode, Hermes, and more)
+                side-by-side with real-time streaming, git worktree awareness, and unified context sharing.
               </p>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
@@ -171,10 +189,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#58a6ff', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>
-                    <Users size={16} /> Parallel Multi-Agent
+                    <Users size={16} /> Any Agent & CLI
                   </div>
                   <div style={{ fontSize: 12, color: '#8b949e', lineHeight: 1.4 }}>
-                    Run Astro, Humano, Uno, and Omo concurrently with synchronized context.
+                    Auto-detects your installed coding tools on macOS & Windows.
                   </div>
                 </div>
 
@@ -187,11 +205,28 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#3fb950', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>
-                    <Server size={16} /> Live OmniRoute Gateway
+                    <Server size={16} /> BYOK & Local Gateway
                   </div>
                   <div style={{ fontSize: 12, color: '#8b949e', lineHeight: 1.4 }}>
-                    Automated model compression, fallback safety nets, and token optimization.
+                    Connect direct API keys (OpenAI, Anthropic, OpenRouter) or local gateways.
                   </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 8,
+                  backgroundColor: '#16171b',
+                  border: '1px solid #27282b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                }}
+              >
+                <Terminal size={18} color="#8b949e" />
+                <div style={{ fontSize: 12, color: '#c9d1d9' }}>
+                  Platform Detected: <strong>{scan?.platformName || (process.platform === 'win32' ? 'Windows' : 'macOS')} ({scan?.arch || 'x64'})</strong> | Git: {scan?.gitDetected ? 'Detected' : 'Not Found'}
                 </div>
               </div>
             </div>
@@ -202,10 +237,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 600, color: '#f0f6fc' }}>
-                    Agent Runtime & Environment Scan
+                    Auto-Detected Agent Runtimes & CLIs
                   </div>
                   <div style={{ fontSize: 12, color: '#8b949e' }}>
-                    Auto-detecting installed CLIs and local AI gateway status
+                    Scanning your system PATH for installed AI tools & coding companions
                   </div>
                 </div>
                 <button
@@ -227,48 +262,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 </button>
               </div>
 
-              {/* Gateway Banner */}
-              <div
-                style={{
-                  padding: 12,
-                  borderRadius: 8,
-                  backgroundColor: scan?.gateway?.connected ? 'rgba(46, 160, 67, 0.1)' : 'rgba(210, 153, 34, 0.1)',
-                  border: scan?.gateway?.connected ? '1px solid rgba(46, 160, 67, 0.3)' : '1px solid rgba(210, 153, 34, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: 16,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <Server size={18} color={scan?.gateway?.connected ? '#3fb950' : '#d29922'} />
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: scan?.gateway?.connected ? '#3fb950' : '#d29922' }}>
-                      {scan?.gateway?.connected ? 'OmniRoute Gateway Active (localhost:20128)' : 'OmniRoute Gateway Offline'}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#8b949e' }}>
-                      {scan?.gateway?.connected
-                        ? `Version: ${scan.gateway.version} | 299 Catalog Models | Compression Stacked`
-                        : 'Using built-in direct model fallbacks and standard API endpoints'}
-                    </div>
-                  </div>
-                </div>
-                <span
-                  style={{
-                    fontSize: 11,
-                    padding: '2px 8px',
-                    borderRadius: 12,
-                    backgroundColor: scan?.gateway?.connected ? 'rgba(46, 160, 67, 0.2)' : 'rgba(210, 153, 34, 0.2)',
-                    color: scan?.gateway?.connected ? '#3fb950' : '#d29922',
-                    fontWeight: 600,
-                  }}
-                >
-                  {scan?.gateway?.connected ? 'CONNECTED' : 'STANDALONE'}
-                </span>
-              </div>
-
               {/* Agent Runtime Cards */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 340, overflowY: 'auto' }}>
                 {scan?.agents?.map((agent: DetectedAgentRuntime) => (
                   <div
                     key={agent.id}
@@ -276,7 +271,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                       padding: '10px 14px',
                       borderRadius: 8,
                       backgroundColor: '#16171b',
-                      border: '1px solid #27282b',
+                      border: agent.installed ? '1px solid rgba(46, 160, 67, 0.4)' : '1px solid #27282b',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -285,22 +280,27 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <Terminal size={16} color={agent.installed ? '#3fb950' : '#8b949e'} />
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#f0f6fc' }}>
-                          {agent.name}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#f0f6fc' }}>
+                            {agent.name}
+                          </span>
+                          <span style={{ fontSize: 10, color: '#8b949e', backgroundColor: '#1f2023', padding: '1px 6px', borderRadius: 4 }}>
+                            {agent.provider}
+                          </span>
                         </div>
                         <div style={{ fontSize: 11, color: '#8b949e' }}>
                           {agent.description}
                         </div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {agent.installed ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#3fb950', fontSize: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#3fb950', fontSize: 12, fontWeight: 600 }}>
                           <CheckCircle2 size={14} /> Ready ({agent.version})
                         </div>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 11, color: '#8b949e', backgroundColor: '#1f2023', padding: '2px 6px', borderRadius: 4 }}>
+                          <span style={{ fontSize: 10, color: '#8b949e', backgroundColor: '#1f2023', padding: '2px 6px', borderRadius: 4 }}>
                             {agent.installCommand}
                           </span>
                         </div>
@@ -315,41 +315,98 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
           {step === 3 && (
             <div>
               <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#f0f6fc' }}>
-                Model Routing & Permissions
+                Model Gateway & API Key Setup (Optional BYOK)
               </div>
               <p style={{ fontSize: 13, color: '#8b949e', marginBottom: 16 }}>
-                Configure how Agent Workbench dispatches prompts and executes tools.
+                Agent Workbench can run with your local CLI runtimes, local gateways, or direct API keys.
               </p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ padding: 14, backgroundColor: '#16171b', border: '1px solid #27282b', borderRadius: 8 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#f0f6fc', marginBottom: 4 }}>
-                    OmniRoute Auto-Compression (RTK + Caveman)
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+                {[
+                  { id: 'gateway', label: 'Local CLI / Gateway', desc: 'OmniRoute, Ollama, or local CLIs' },
+                  { id: 'openai', label: 'OpenAI (Direct Key)', desc: 'GPT-5, Codex, GPT-4o' },
+                  { id: 'anthropic', label: 'Anthropic (Direct Key)', desc: 'Claude 3.7 Sonnet, Opus' },
+                  { id: 'openrouter', label: 'OpenRouter (BYOK)', desc: 'Unified API for all models' },
+                  { id: 'custom', label: 'Custom Endpoint', desc: 'Any /v1/chat/completions URL' },
+                ].map((p) => (
+                  <div
+                    key={p.id}
+                    onClick={() => setProviderType(p.id as any)}
+                    style={{
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: providerType === p.id ? 'rgba(56, 139, 253, 0.12)' : '#16171b',
+                      border: providerType === p.id ? '1px solid #388bfd' : '1px solid #27282b',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{ fontSize: 12, fontWeight: 600, color: providerType === p.id ? '#58a6ff' : '#f0f6fc', marginBottom: 2 }}>
+                      {p.label}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#8b949e' }}>{p.desc}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: '#8b949e', lineHeight: 1.4 }}>
-                    Automatically compresses large tool schemas, system instructions, and conversation history to save up to 89% of token overhead.
-                  </div>
-                </div>
-
-                <div style={{ padding: 14, backgroundColor: '#16171b', border: '1px solid #27282b', borderRadius: 8 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#f0f6fc', marginBottom: 4 }}>
-                    1M+ Token Fallback Safety Net
-                  </div>
-                  <div style={{ fontSize: 12, color: '#8b949e', lineHeight: 1.4 }}>
-                    Guarantees that long multi-turn sessions automatically failover to DeepSeek V4 Pro (1M) or Nova Pro (300k) without context overruns.
-                  </div>
-                </div>
+                ))}
               </div>
+
+              {providerType !== 'gateway' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 14, backgroundColor: '#16171b', border: '1px solid #27282b', borderRadius: 8 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, color: '#8b949e', marginBottom: 4 }}>
+                      API Key (stored securely in VS Code Secret Storage)
+                    </label>
+                    <input
+                      type="password"
+                      placeholder={`sk-... (Enter your ${providerType.toUpperCase()} API Key)`}
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        backgroundColor: '#1f2023',
+                        border: '1px solid #27282b',
+                        borderRadius: 6,
+                        color: '#f0f6fc',
+                        fontSize: 12,
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+
+                  {providerType === 'custom' && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, color: '#8b949e', marginBottom: 4 }}>
+                        Base Endpoint URL
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="http://localhost:8000/v1"
+                        value={apiEndpoint}
+                        onChange={(e) => setApiEndpoint(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          backgroundColor: '#1f2023',
+                          border: '1px solid #27282b',
+                          borderRadius: 6,
+                          color: '#f0f6fc',
+                          fontSize: 12,
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
           {step === 4 && (
             <div>
               <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#f0f6fc' }}>
-                Select Starter Team & Layout
+                Select Active Agents & Workspace Mode
               </div>
               <p style={{ fontSize: 13, color: '#8b949e', marginBottom: 16 }}>
-                Choose your default orchestration mode and starting agents.
+                Choose the 2 to 4 agents you want to collaborate with in your primary grid.
               </p>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
@@ -367,7 +424,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     Team Mode (Recommended)
                   </div>
                   <div style={{ fontSize: 12, color: '#8b949e' }}>
-                    Shared project folder, designated Team Lead, and synchronized task execution.
+                    Shared project directory, synchronized task distribution, and collective file edits.
                   </div>
                 </div>
 
@@ -382,29 +439,33 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   }}
                 >
                   <div style={{ fontSize: 13, fontWeight: 600, color: selectedMode === 'independent' ? '#58a6ff' : '#f0f6fc', marginBottom: 4 }}>
-                    Independent Agents
+                    Independent Panels
                   </div>
                   <div style={{ fontSize: 12, color: '#8b949e' }}>
-                    Isolated sessions, individual worktrees, and per-card task tracking.
+                    Isolated conversations, independent git branches, and individual task focus.
                   </div>
                 </div>
               </div>
 
               <div style={{ fontSize: 13, fontWeight: 600, color: '#f0f6fc', marginBottom: 8 }}>
-                Select Active Agents:
+                Select Active Slots (Up to 4):
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                 {[
-                  { id: 'astro', label: 'Astro' },
-                  { id: 'humano', label: 'Humano' },
-                  { id: 'uno', label: 'Uno' },
-                  { id: 'omo', label: 'Omo' },
+                  { id: 'cursor-agent', label: 'Cursor Agent' },
+                  { id: 'codex-chatgpt', label: 'ChatGPT / Codex' },
+                  { id: 'claude-code', label: 'Claude Code' },
+                  { id: 'opencode', label: 'OpenCode' },
+                  { id: 'hermes', label: 'Hermes' },
+                  { id: 'openclaw', label: 'OpenClaw' },
+                  { id: 'gemini-cli', label: 'Gemini / Astro' },
+                  { id: 'ollama', label: 'Ollama Local' },
                 ].map((a) => (
                   <div
                     key={a.id}
                     onClick={() => toggleAgent(a.id)}
                     style={{
-                      padding: '8px 12px',
+                      padding: '10px 12px',
                       borderRadius: 6,
                       backgroundColor: selectedAgents.includes(a.id) ? '#1f2937' : '#16171b',
                       border: selectedAgents.includes(a.id) ? '1px solid #388bfd' : '1px solid #27282b',
@@ -475,7 +536,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               </button>
             ) : (
               <button
-                onClick={() => onComplete(selectedMode, selectedAgents)}
+                onClick={() => onComplete(selectedMode, selectedAgents, apiKey, apiEndpoint)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

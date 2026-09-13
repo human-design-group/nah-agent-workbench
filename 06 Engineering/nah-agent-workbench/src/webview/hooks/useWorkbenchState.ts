@@ -12,21 +12,23 @@ import {
 } from '../types/workbench';
 import { getVSCodeApi } from './useVSCodeApi';
 
-const DEFAULT_AGENTS: AgentConfig[] = [
+export const UNIVERSAL_DEFAULT_AGENTS: AgentConfig[] = [
   {
-    id: 'agent-astro',
-    key: 'astro',
-    name: 'Astro',
-    runtime: 'antigravity',
-    sessionName: 'Session 01 · Supervisor',
-    sessionId: 'ses-astro-01',
+    id: 'agent-cursor',
+    key: 'cursor-agent',
+    name: 'Cursor Agent',
+    provider: 'Cursor',
+    runtime: 'cursor-agent',
+    category: 'ide',
+    sessionName: 'Session 01 · IDE Context',
+    sessionId: 'ses-cursor-01',
     status: 'online',
     viewMode: 'chat',
-    selectedModel: 'curso-production',
+    selectedModel: 'Claude 3.7 Sonnet (Cursor)',
     permissionsMode: 'Autonomous',
     gitStatus: {
-      workspace: 'Agent Workbench',
-      worktree: 'astro/worktree',
+      workspace: 'Active Project',
+      worktree: 'main',
       branch: 'main',
       modified: 0,
       staged: 0,
@@ -35,30 +37,134 @@ const DEFAULT_AGENTS: AgentConfig[] = [
     },
     messages: [
       {
-        id: 'a-msg-1',
+        id: 'c-msg-1',
         sender: 'agent',
-        senderName: 'Astro',
-        content: 'AntiGravity Supervisor online. Ready for parallel orchestration, code generation, and multi-agent coordination.',
-        tokens: 180,
+        senderName: 'Cursor Agent',
+        content: 'Cursor Native Agent connected. Ready for full codebase indexing, multi-file refactoring, and editor assistance.',
+        tokens: 150,
+        latencyMs: 180,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ],
+  },
+  {
+    id: 'agent-codex',
+    key: 'codex-chatgpt',
+    name: 'ChatGPT / Codex',
+    provider: 'OpenAI',
+    runtime: 'codex',
+    category: 'coding',
+    sessionName: 'Session 01 · Code Generation',
+    sessionId: 'ses-codex-01',
+    status: 'online',
+    viewMode: 'chat',
+    selectedModel: 'GPT-5 Codex',
+    permissionsMode: 'Autonomous',
+    gitStatus: {
+      workspace: 'Active Project',
+      worktree: 'main',
+      branch: 'main',
+      modified: 0,
+      staged: 0,
+      untracked: 0,
+      divergence: 0,
+    },
+    messages: [
+      {
+        id: 'x-msg-1',
+        sender: 'agent',
+        senderName: 'ChatGPT / Codex',
+        content: 'ChatGPT / OpenAI Codex CLI bridge ready. Formulate questions, algorithms, or complex implementations.',
+        tokens: 160,
+        latencyMs: 220,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ],
+  },
+  {
+    id: 'agent-claude',
+    key: 'claude-code',
+    name: 'Claude Code',
+    provider: 'Anthropic',
+    runtime: 'claude',
+    category: 'coding',
+    sessionName: 'Session 01 · Terminal Architect',
+    sessionId: 'ses-claude-01',
+    status: 'online',
+    viewMode: 'chat',
+    selectedModel: 'Claude 3.7 Sonnet',
+    permissionsMode: 'Supervised',
+    gitStatus: {
+      workspace: 'Active Project',
+      worktree: 'main',
+      branch: 'main',
+      modified: 0,
+      staged: 0,
+      untracked: 0,
+      divergence: 0,
+    },
+    messages: [
+      {
+        id: 'cl-msg-1',
+        sender: 'agent',
+        senderName: 'Claude Code',
+        content: 'Claude Code companion ready. Autonomous file editing, bash execution, and code review loaded.',
+        tokens: 175,
         latencyMs: 240,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ],
   },
   {
-    id: 'agent-humano',
-    key: 'humano',
-    name: 'Humano',
-    runtime: 'openclaw',
-    sessionName: 'Session 01 · Operator',
-    sessionId: 'ses-humano-01',
+    id: 'agent-opencode',
+    key: 'opencode',
+    name: 'OpenCode',
+    provider: 'OpenCode AI',
+    runtime: 'opencode',
+    category: 'coding',
+    sessionName: 'Session 01 · Codebase Architect',
+    sessionId: 'ses-opencode-01',
     status: 'online',
     viewMode: 'chat',
-    selectedModel: 'humano-assistant',
+    selectedModel: 'DeepSeek V4 Pro',
+    permissionsMode: 'Autonomous',
+    gitStatus: {
+      workspace: 'Active Project',
+      worktree: 'main',
+      branch: 'main',
+      modified: 0,
+      staged: 0,
+      untracked: 0,
+      divergence: 0,
+    },
+    messages: [
+      {
+        id: 'oc-msg-1',
+        sender: 'agent',
+        senderName: 'OpenCode',
+        content: 'OpenCode Sisyphus harness active. Ready for deep multi-file analysis and repository-level edits.',
+        tokens: 190,
+        latencyMs: 270,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ],
+  },
+  {
+    id: 'agent-hermes',
+    key: 'hermes',
+    name: 'Hermes',
+    provider: 'Nous Research',
+    runtime: 'hermes',
+    category: 'general',
+    sessionName: 'Session 01 · Planning Coordinator',
+    sessionId: 'ses-hermes-01',
+    status: 'online',
+    viewMode: 'chat',
+    selectedModel: 'Hermes 3 / Kimi K2.5',
     permissionsMode: 'Supervised',
     gitStatus: {
-      workspace: 'Agent Workbench',
-      worktree: 'humano/worktree',
+      workspace: 'Active Project',
+      worktree: 'main',
       branch: 'main',
       modified: 0,
       staged: 0,
@@ -69,28 +175,64 @@ const DEFAULT_AGENTS: AgentConfig[] = [
       {
         id: 'h-msg-1',
         sender: 'agent',
-        senderName: 'Humano',
-        content: 'OpenClaw Operator connected. Ready for terminal command execution, background tooling, and browser workflows.',
+        senderName: 'Hermes',
+        content: 'Hermes planning and verification engine ready. Coordinating milestone execution.',
         tokens: 140,
+        latencyMs: 200,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ],
+  },
+  {
+    id: 'agent-openclaw',
+    key: 'openclaw',
+    name: 'OpenClaw',
+    provider: 'OpenClaw',
+    runtime: 'openclaw',
+    category: 'terminal',
+    sessionName: 'Session 01 · System Operator',
+    sessionId: 'ses-openclaw-01',
+    status: 'online',
+    viewMode: 'chat',
+    selectedModel: 'Qwen3 Coder Next',
+    permissionsMode: 'Supervised',
+    gitStatus: {
+      workspace: 'Active Project',
+      worktree: 'main',
+      branch: 'main',
+      modified: 0,
+      staged: 0,
+      untracked: 0,
+      divergence: 0,
+    },
+    messages: [
+      {
+        id: 'oc-msg-1',
+        sender: 'agent',
+        senderName: 'OpenClaw',
+        content: 'OpenClaw terminal execution agent online. Ready for command automation.',
+        tokens: 130,
         latencyMs: 190,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ],
   },
   {
-    id: 'agent-uno',
-    key: 'uno',
-    name: 'Uno',
-    runtime: 'hermes',
-    sessionName: 'Session 01 · Strategist',
-    sessionId: 'ses-uno-01',
+    id: 'agent-gemini',
+    key: 'gemini-cli',
+    name: 'Gemini / Astro',
+    provider: 'Google',
+    runtime: 'gemini',
+    category: 'general',
+    sessionName: 'Session 01 · Generalist',
+    sessionId: 'ses-gemini-01',
     status: 'online',
     viewMode: 'chat',
-    selectedModel: 'uno-production',
-    permissionsMode: 'Supervised',
+    selectedModel: 'Gemini 2.5 Flash',
+    permissionsMode: 'Autonomous',
     gitStatus: {
-      workspace: 'Agent Workbench',
-      worktree: 'uno/worktree',
+      workspace: 'Active Project',
+      worktree: 'main',
       branch: 'main',
       modified: 0,
       staged: 0,
@@ -99,30 +241,32 @@ const DEFAULT_AGENTS: AgentConfig[] = [
     },
     messages: [
       {
-        id: 'u-msg-1',
+        id: 'g-msg-1',
         sender: 'agent',
-        senderName: 'Uno',
-        content: 'Chief of Staff ready. Coordinating multi-agent directives, verification gates, and milestone reviews.',
-        tokens: 165,
-        latencyMs: 210,
+        senderName: 'Gemini / Astro',
+        content: 'Gemini generalist coding companion ready.',
+        tokens: 110,
+        latencyMs: 160,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ],
   },
   {
-    id: 'agent-omo',
-    key: 'omo',
-    name: 'Omo',
-    runtime: 'opencode',
-    sessionName: 'Session 01 · Architect',
-    sessionId: 'ses-omo-01',
+    id: 'agent-ollama',
+    key: 'ollama',
+    name: 'Ollama (Local)',
+    provider: 'Ollama',
+    runtime: 'ollama',
+    category: 'local',
+    sessionName: 'Session 01 · Local Offline',
+    sessionId: 'ses-ollama-01',
     status: 'online',
     viewMode: 'chat',
-    selectedModel: 'omo-production',
+    selectedModel: 'Llama 3.3 (Local)',
     permissionsMode: 'Autonomous',
     gitStatus: {
-      workspace: 'Agent Workbench',
-      worktree: 'omo/worktree',
+      workspace: 'Active Project',
+      worktree: 'main',
       branch: 'main',
       modified: 0,
       staged: 0,
@@ -131,12 +275,12 @@ const DEFAULT_AGENTS: AgentConfig[] = [
     },
     messages: [
       {
-        id: 'o-msg-1',
+        id: 'ol-msg-1',
         sender: 'agent',
-        senderName: 'Omo',
-        content: 'OpenCode Sisyphus harness operational. AST-Grep, LSP servers, and deep codebase refactoring engine bound.',
-        tokens: 190,
-        latencyMs: 280,
+        senderName: 'Ollama Local',
+        content: 'Ollama local offline model runner ready.',
+        tokens: 95,
+        latencyMs: 140,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ],
@@ -147,20 +291,20 @@ const INITIAL_STATE: WorkbenchState = {
   layoutMode: 'vertical',
   sessionMode: 'team',
   teamConfig: {
-    leadId: 'agent-astro',
-    agentIds: ['agent-astro', 'agent-humano', 'agent-uno', 'agent-omo'],
-    projectFolder: 'Agent Workbench',
+    leadId: 'agent-cursor',
+    agentIds: ['agent-cursor', 'agent-codex', 'agent-claude', 'agent-opencode'],
+    projectFolder: 'Active Project',
   },
-  agents: DEFAULT_AGENTS,
-  panelSlots: ['astro', 'humano', 'uno', 'omo'],
+  agents: UNIVERSAL_DEFAULT_AGENTS,
+  panelSlots: ['cursor-agent', 'codex-chatgpt', 'claude-code', 'opencode'],
   panelSizes: [25, 25, 25, 25],
-  focusedAgentId: 'agent-astro',
+  focusedAgentId: 'agent-cursor',
   activeDrawerAgentId: null,
   isOnboarded: false,
   remoteInfo: {
     port: 4545,
-    shareCode: 'NAH777',
-    currentSessionUrl: 'http://127.0.0.1:4545/?session=astro',
+    shareCode: 'AWB100',
+    currentSessionUrl: 'http://127.0.0.1:4545/?session=cursor-agent',
     workspaceUrl: 'http://127.0.0.1:4545/',
   },
 };
@@ -254,7 +398,6 @@ export function useWorkbenchState() {
             ...prev,
             agents: prev.agents.map((a) => {
               if (a.id !== agentId && a.key !== agentId) return a;
-              // Check if replacing streaming placeholder
               const msgs = [...a.messages];
               const lastIdx = msgs.length - 1;
               if (lastIdx >= 0 && msgs[lastIdx].sender === 'agent') {
@@ -266,7 +409,7 @@ export function useWorkbenchState() {
                 ...a,
                 status: 'online',
                 messages: msgs,
-                attachedContext: [], // Clear attachments on reply
+                attachedContext: [],
               };
             }),
           }));
@@ -276,7 +419,7 @@ export function useWorkbenchState() {
         case 'AGENT_STATUS_UPDATE':
           setState((prev) => ({
             ...prev,
-            agents: prev.agents.map((a) => (a.id === msg.payload.agentId ? { ...a, status: msg.payload.status } : a)),
+            agents: prev.agents.map((a) => (a.id === msg.payload.agentId || a.key === msg.payload.agentId ? { ...a, status: msg.payload.status } : a)),
           }));
           break;
 
@@ -327,17 +470,19 @@ export function useWorkbenchState() {
     vscode.postMessage({ type: 'REQUEST_ENVIRONMENT_SCAN' });
   }, [vscode]);
 
-  const completeOnboarding = useCallback((teamMode: SessionMode, selectedAgentKeys: string[]) => {
+  const completeOnboarding = useCallback((teamMode: SessionMode, selectedAgentKeys: string[], apiKey?: string, apiEndpoint?: string) => {
     setState((prev) => ({
       ...prev,
       isOnboarded: true,
       sessionMode: teamMode,
       panelSlots: selectedAgentKeys,
+      globalApiKey: apiKey || prev.globalApiKey,
+      globalApiEndpoint: apiEndpoint || prev.globalApiEndpoint,
     }));
     setShowOnboarding(false);
     vscode.postMessage({
       type: 'COMPLETE_ONBOARDING',
-      payload: { teamMode, selectedAgents: selectedAgentKeys },
+      payload: { teamMode, selectedAgents: selectedAgentKeys, apiKey, apiEndpoint },
     });
   }, [vscode]);
 
@@ -461,6 +606,7 @@ export function useWorkbenchState() {
       type: 'SEND_AGENT_MESSAGE',
       payload: {
         agentId,
+        agentKey: targetAgent?.key || agentId,
         text,
         model: targetAgent?.selectedModel,
         attachments,
@@ -510,11 +656,11 @@ export function useWorkbenchState() {
     const info = state.remoteInfo;
     let textToCopy = '';
     if (target === 'session') {
-      textToCopy = info?.currentSessionUrl || `http://127.0.0.1:4545/?session=${agentId || 'astro'}`;
+      textToCopy = info?.currentSessionUrl || `http://127.0.0.1:4545/?session=${agentId || 'cursor-agent'}`;
     } else if (target === 'workspace') {
       textToCopy = info?.workspaceUrl || 'http://127.0.0.1:4545/';
     } else {
-      textToCopy = info?.shareCode || 'NAH777';
+      textToCopy = info?.shareCode || 'AWB100';
     }
 
     if (navigator.clipboard) {
