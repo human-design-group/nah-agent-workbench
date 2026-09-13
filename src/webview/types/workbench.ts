@@ -87,6 +87,7 @@ export interface WorkbenchState {
   focusedAgentId: string | null;
   activeDrawerAgentId: string | null; // which agent's drawer is open
   remoteInfo?: RemoteShareInfo;
+  isOnboarded?: boolean;
 }
 
 export type WebviewToHostMessage =

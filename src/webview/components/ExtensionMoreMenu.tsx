@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Share2, Search, Copy, Globe, Key, Check } from 'lucide-react';
+import { Settings, Share2, Search, Copy, Globe, Key, Check, Sparkles } from 'lucide-react';
 import { RemoteShareInfo } from '../types/workbench';
 
 interface ExtensionMoreMenuProps {
@@ -40,6 +40,17 @@ export const ExtensionMoreMenu: React.FC<ExtensionMoreMenuProps> = ({
       <div className="menu-backdrop" onClick={onClose} />
       <div className="extension-more-menu" onClick={e => e.stopPropagation()}>
         <div className="menu-section">
+          <button
+            className="menu-item"
+            onClick={() => {
+              onOpenSettings();
+              onClose();
+            }}
+          >
+            <Sparkles size={14} className="menu-icon text-cyan" />
+            <span>Welcome & Walkthrough</span>
+          </button>
+
           <button
             className="menu-item"
             onClick={() => {

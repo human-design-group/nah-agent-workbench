@@ -5,9 +5,14 @@ import { useWorkbenchState } from './hooks/useWorkbenchState';
 import { ControlBar } from './components/ControlBar';
 import { GridContainer } from './components/GridContainer';
 
+import { OnboardingModal } from './components/OnboardingModal';
+
 const App: React.FC = () => {
   const {
     state,
+    showOnboarding,
+    setShowOnboarding,
+    completeOnboarding,
     setLayoutMode,
     setSessionMode,
     switchAgentSlot,
@@ -37,7 +42,7 @@ const App: React.FC = () => {
         currentSlotKeys={state.panelSlots}
         remoteInfo={state.remoteInfo}
         onReload={reloadWorkbench}
-        onOpenSettings={() => console.log('Open settings')}
+        onOpenSettings={() => setShowOnboarding(true)}
         onExportSession={() => exportSession()}
         onFindInSession={() => findInSession()}
         onDuplicateSession={() => duplicateSession()}
@@ -57,10 +62,20 @@ const App: React.FC = () => {
         onFindInSession={findInSession}
         onExportSession={exportSession}
         onDuplicateSession={duplicateSession}
-        onClearSession={(agentId) => console.log('Clear session for', agentId)}
+        onClearSession={(agentId) => newSession(agentId)}
         onClosePanel={closeAgentPanel}
         onAddAgentClick={() => addAgentSlot('humano')}
       />
+
+      {showOnboarding && (
+        <OnboardingModal
+          availableAgents={state.agents}
+          currentSlots={state.panelSlots}
+          initialMode={state.sessionMode}
+          onComplete={completeOnboarding}
+          onClose={() => setShowOnboarding(false)}
+        />
+      )}
     </div>
   );
 };

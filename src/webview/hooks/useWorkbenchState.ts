@@ -187,6 +187,7 @@ const INITIAL_STATE: WorkbenchState = {
   panelSizes: [25, 25, 25, 25],
   focusedAgentId: 'agent-humano',
   activeDrawerAgentId: null,
+  isOnboarded: false,
   remoteInfo: {
     port: 4545,
     shareCode: 'NAH777',
@@ -198,6 +199,7 @@ const INITIAL_STATE: WorkbenchState = {
 export function useWorkbenchState() {
   const vscode = getVSCodeApi();
   const [state, setState] = useState<WorkbenchState>(INITIAL_STATE);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(true);
 
   useEffect(() => {
     vscode.postMessage({
@@ -214,9 +216,12 @@ export function useWorkbenchState() {
       switch (msg.type) {
         case 'RESTORE_STATE':
           if (msg.payload) {
+            const restoredOnboarded = msg.payload.isOnboarded === true;
+            setShowOnboarding(!restoredOnboarded);
             setState((prev) => ({
               ...prev,
               ...msg.payload,
+              isOnboarded: restoredOnboarded,
               agents: msg.payload.agents && msg.payload.agents.length > 0 ? msg.payload.agents : prev.agents,
               panelSlots: msg.payload.panelSlots && msg.payload.panelSlots.length > 0 ? msg.payload.panelSlots : prev.panelSlots,
             }));
@@ -230,6 +235,7 @@ export function useWorkbenchState() {
           break;
         case 'RESET_LAYOUT':
           setState(INITIAL_STATE);
+          setShowOnboarding(true);
           break;
       }
     };
@@ -408,16 +414,37 @@ export function useWorkbenchState() {
     vscode.postMessage({ type: 'COPY_REMOTE_URL', payload: { target, agentId } });
   }, [state.remoteInfo, vscode]);
 
+  const completeOnboarding = useCallback((mode: SessionMode, selectedSlots: string[]) => {
+    setState((prev) => {
+      const newState: WorkbenchState = {
+        ...prev,
+        isOnboarded: true,
+        sessionMode: mode,
+        panelSlots: selectedSlots.length > 0 ? selectedSlots : prev.panelSlots,
+      };
+      vscode.postMessage({
+        type: 'SAVE_STATE',
+        payload: newState,
+      });
+      return newState;
+    });
+    setShowOnboarding(false);
+  }, [vscode]);
+
   const reloadWorkbench = useCallback(() => {
     vscode.postMessage({ type: 'RELOAD_WORKBENCH' });
   }, [vscode]);
 
   const resetLayout = useCallback(() => {
     setState(INITIAL_STATE);
+    setShowOnboarding(true);
   }, []);
 
   return {
     state,
+    showOnboarding,
+    setShowOnboarding,
+    completeOnboarding,
     setLayoutMode,
     setSessionMode,
     switchAgentSlot,
