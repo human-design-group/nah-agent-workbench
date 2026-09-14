@@ -38,8 +38,7 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onCommand:agento.open",
-    "onCommand:workbench.open",
-    "onCommand:nah.openWorkbench"
+    "onCommand:agento.resetLayout"
   ],
   "contributes": {
     "commands": [
@@ -48,16 +47,6 @@
         "title": "Open Agent Workbench",
         "category": "Agento",
         "icon": "$(layout-grid)"
-      },
-      {
-        "command": "workbench.open",
-        "title": "Open Agent Workbench (Alias)",
-        "category": "Agento"
-      },
-      {
-        "command": "nah.openWorkbench",
-        "title": "Open Agent Workbench (Legacy)",
-        "category": "Agento"
       },
       {
         "command": "agento.resetLayout",
@@ -72,13 +61,6 @@
         "mac": "cmd+alt+n",
         "win": "ctrl+alt+n",
         "linux": "ctrl+alt+n"
-      },
-      {
-        "command": "workbench.open",
-        "key": "cmd+alt+n",
-        "mac": "cmd+alt+n",
-        "win": "ctrl+alt+n",
-        "linux": "ctrl+alt+n"
       }
     ],
     "menus": {
@@ -88,12 +70,6 @@
         },
         {
           "command": "agento.resetLayout"
-        },
-        {
-          "command": "workbench.open"
-        },
-        {
-          "command": "nah.openWorkbench"
         }
       ]
     },
