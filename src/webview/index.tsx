@@ -6,12 +6,20 @@ import { ControlBar } from './components/ControlBar';
 import { GridContainer } from './components/GridContainer';
 
 import { OnboardingModal } from './components/OnboardingModal';
+import { SettingsModal } from './components/SettingsModal';
 
 const App: React.FC = () => {
   const {
     state,
     showOnboarding,
     setShowOnboarding,
+    showSettings,
+    setShowSettings,
+    settings,
+    updateSettings,
+    resetSettings,
+    diagnosticResults,
+    runDiagnostics,
     completeOnboarding,
     setLayoutMode,
     setSessionMode,
@@ -42,7 +50,8 @@ const App: React.FC = () => {
         currentSlotKeys={state.panelSlots}
         remoteInfo={state.remoteInfo}
         onReload={reloadWorkbench}
-        onOpenSettings={() => setShowOnboarding(true)}
+        onOpenSettings={() => setShowSettings(true)}
+        onOpenWalkthrough={() => setShowOnboarding(true)}
         onExportSession={() => exportSession()}
         onFindInSession={() => findInSession()}
         onDuplicateSession={() => duplicateSession()}
@@ -74,6 +83,19 @@ const App: React.FC = () => {
           initialMode={state.sessionMode}
           onComplete={completeOnboarding}
           onClose={() => setShowOnboarding(false)}
+        />
+      )}
+
+      {showSettings && (
+        <SettingsModal
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          currentSettings={settings}
+          onSaveSettings={updateSettings}
+          onResetSettings={resetSettings}
+          availableAgents={state.agents}
+          diagnosticResults={diagnosticResults}
+          onRunDiagnostics={runDiagnostics}
         />
       )}
     </div>

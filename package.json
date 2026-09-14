@@ -50,6 +50,18 @@
         "icon": "$(layout-grid)"
       },
       {
+        "command": "agento.openSettings",
+        "title": "Open Extension Settings",
+        "category": "Agento",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "agento.openWalkthrough",
+        "title": "Open Welcome & Walkthrough",
+        "category": "Agento",
+        "icon": "$(sparkle)"
+      },
+      {
         "command": "agento.resetLayout",
         "title": "Reset Workbench Layout",
         "category": "Agento"
@@ -62,6 +74,13 @@
         "mac": "cmd+alt+n",
         "win": "ctrl+alt+n",
         "linux": "ctrl+alt+n"
+      },
+      {
+        "command": "agento.openSettings",
+        "key": "cmd+alt+,",
+        "mac": "cmd+alt+,",
+        "win": "ctrl+alt+,",
+        "linux": "ctrl+alt+,"
       }
     ],
     "menus": {
@@ -70,14 +89,20 @@
           "command": "agento.open"
         },
         {
+          "command": "agento.openSettings"
+        },
+        {
+          "command": "agento.openWalkthrough"
+        },
+        {
           "command": "agento.resetLayout"
         }
       ]
     },
     "configuration": {
-      "title": "Agent Workbench",
+      "title": "Agento — Agent Workbench",
       "properties": {
-        "agentWorkbench.defaultLayout": {
+        "agento.general.defaultLayout": {
           "type": "string",
           "enum": [
             "vertical",
@@ -87,7 +112,140 @@
             "focus"
           ],
           "default": "vertical",
-          "description": "Default multi-agent layout mode"
+          "description": "Default layout arrangement for multi-agent grid"
+        },
+        "agento.general.uiDensity": {
+          "type": "string",
+          "enum": [
+            "compact",
+            "comfortable",
+            "spacious"
+          ],
+          "default": "comfortable",
+          "description": "UI density and card padding spacing"
+        },
+        "agento.general.enableSounds": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable audio cues on agent task completion and tool executions"
+        },
+        "agento.general.autoFocusActiveAgent": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically focus and elevate agent card on incoming message or tool execution"
+        },
+        "agento.general.streamAnimationSpeed": {
+          "type": "string",
+          "enum": [
+            "smooth",
+            "instant"
+          ],
+          "default": "smooth",
+          "description": "Streaming animation speed for agent chat tokens"
+        },
+        "agento.agents.defaultSlots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "antigravity",
+            "claude",
+            "codex",
+            "humano"
+          ],
+          "description": "Default active agent slots initialized on workbench launch"
+        },
+        "agento.agents.enableCliFallback": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow direct CLI invocation fallback when gateway connection is unavailable"
+        },
+        "agento.agents.stepTimeoutSeconds": {
+          "type": "number",
+          "default": 180,
+          "minimum": 10,
+          "maximum": 3600,
+          "description": "Maximum execution timeout in seconds per agent reasoning step"
+        },
+        "agento.team.defaultSessionMode": {
+          "type": "string",
+          "enum": [
+            "independent",
+            "team"
+          ],
+          "default": "independent",
+          "description": "Default operating mode: Independent Specialist or Autonomous Team"
+        },
+        "agento.team.defaultTeamLead": {
+          "type": "string",
+          "default": "antigravity",
+          "description": "Default lead agent coordinating tasks in Autonomous Team mode"
+        },
+        "agento.team.enableSharedContextBus": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically synchronize completed subtask summaries across team members"
+        },
+        "agento.gateway.omniRouteUrl": {
+          "type": "string",
+          "default": "http://localhost:20128",
+          "description": "OmniRoute / Live Model Gateway endpoint URL"
+        },
+        "agento.gateway.companionPort": {
+          "type": "number",
+          "default": 4545,
+          "description": "Local HTTP and WebSocket port for Agento Remote Companion Bridge"
+        },
+        "agento.gateway.autoStartCompanion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically launch the remote companion bridge server on extension startup"
+        },
+        "agento.gateway.enableNahBridge": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable deep ecosystem discovery with nah-bridge MCP service"
+        },
+        "agento.git.worktreeRoot": {
+          "type": "string",
+          "default": "~/worktrees",
+          "description": "Root directory path for isolated Git worktree checkouts"
+        },
+        "agento.git.enforceSingleWriter": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enforce single-writer Git protocol: agents never write directly to main repository"
+        },
+        "agento.git.branchTemplate": {
+          "type": "string",
+          "default": "agent/{agent}/{session}",
+          "description": "Template pattern for auto-generated Git branches"
+        },
+        "agento.security.defaultPermissionsMode": {
+          "type": "string",
+          "enum": [
+            "autonomous",
+            "supervised",
+            "read-only"
+          ],
+          "default": "autonomous",
+          "description": "Default tool execution permission mode across agent slots"
+        },
+        "agento.security.confirmDangerousCommands": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require user confirmation before executing filesystem deletion or network-modifying commands"
+        },
+        "agento.security.maskSecretsInLogs": {
+          "type": "boolean",
+          "default": true,
+          "description": "Redact detected API keys, passwords, and tokens from terminal and chat logs"
+        },
+        "agento.security.tokenBudgetLimit": {
+          "type": "number",
+          "default": 500000,
+          "description": "Maximum token budget alert threshold per workbench session"
         }
       }
     }

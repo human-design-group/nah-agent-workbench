@@ -7,6 +7,7 @@ interface ExtensionMoreMenuProps {
   onClose: () => void;
   remoteInfo?: RemoteShareInfo;
   onOpenSettings: () => void;
+  onOpenWalkthrough: () => void;
   onExportSession: () => void;
   onFindInSession: () => void;
   onDuplicateSession: () => void;
@@ -18,6 +19,7 @@ export const ExtensionMoreMenu: React.FC<ExtensionMoreMenuProps> = ({
   onClose,
   remoteInfo,
   onOpenSettings,
+  onOpenWalkthrough,
   onExportSession,
   onFindInSession,
   onDuplicateSession,
@@ -43,7 +45,7 @@ export const ExtensionMoreMenu: React.FC<ExtensionMoreMenuProps> = ({
           <button
             className="menu-item"
             onClick={() => {
-              onOpenSettings();
+              onOpenWalkthrough();
               onClose();
             }}
           >

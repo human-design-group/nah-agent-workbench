@@ -31,6 +31,7 @@ interface ControlBarProps {
   remoteInfo?: RemoteShareInfo;
   onReload: () => void;
   onOpenSettings: () => void;
+  onOpenWalkthrough: () => void;
   onExportSession: () => void;
   onFindInSession: () => void;
   onDuplicateSession: () => void;
@@ -49,6 +50,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   remoteInfo,
   onReload,
   onOpenSettings,
+  onOpenWalkthrough,
   onExportSession,
   onFindInSession,
   onDuplicateSession,
@@ -221,6 +223,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               onClose={() => setIsMoreMenuOpen(false)}
               remoteInfo={remoteInfo}
               onOpenSettings={onOpenSettings}
+              onOpenWalkthrough={onOpenWalkthrough}
               onExportSession={onExportSession}
               onFindInSession={onFindInSession}
               onDuplicateSession={onDuplicateSession}

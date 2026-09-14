@@ -77,6 +77,8 @@ export interface RemoteShareInfo {
   port: number;
 }
 
+import { AgentoSettings } from './settings';
+
 export interface WorkbenchState {
   layoutMode: LayoutMode;
   sessionMode: SessionMode;
@@ -88,10 +90,14 @@ export interface WorkbenchState {
   activeDrawerAgentId: string | null; // which agent's drawer is open
   remoteInfo?: RemoteShareInfo;
   isOnboarded?: boolean;
+  settings?: AgentoSettings;
 }
 
 export type WebviewToHostMessage =
   | { type: 'SAVE_STATE'; payload: WorkbenchState }
+  | { type: 'SAVE_SETTINGS'; payload: AgentoSettings }
+  | { type: 'RESET_SETTINGS' }
+  | { type: 'CHECK_DIAGNOSTICS' }
   | { type: 'LOG'; payload: { level: 'info' | 'warn' | 'error'; message: string } }
   | { type: 'SEND_AGENT_MESSAGE'; payload: { agentId: string; text: string; model?: string; attachments?: any[] } }
   | { type: 'BROADCAST_MESSAGE'; payload: { text: string; targetAgentIds: string[] } }
@@ -109,9 +115,21 @@ export type WebviewToHostMessage =
   | { type: 'COPY_REMOTE_URL'; payload: { target: 'session' | 'workspace' | 'shareCode'; agentId?: string } }
   | { type: 'RELOAD_WORKBENCH' };
 
+export interface DiagnosticCheckResult {
+  omniRoute: { ok: boolean; statusText: string; latencyMs?: number };
+  companion: { ok: boolean; statusText: string; port: number };
+  nahBridge: { ok: boolean; statusText: string };
+  worktrees: { ok: boolean; path: string; count: number };
+}
+
 export type HostToWebviewMessage =
   | { type: 'RESTORE_STATE'; payload: Partial<WorkbenchState> }
+  | { type: 'SETTINGS_UPDATED'; payload: AgentoSettings }
+  | { type: 'DIAGNOSTICS_RESULT'; payload: DiagnosticCheckResult }
+  | { type: 'OPEN_SETTINGS' }
+  | { type: 'OPEN_WALKTHROUGH' }
   | { type: 'AGENT_STATUS_UPDATE'; payload: { agentId: string; status: AgentStatus } }
   | { type: 'AGENT_MESSAGE_RECEIVED'; payload: { agentId: string; message: AgentChatMessage } }
   | { type: 'RESET_LAYOUT' }
   | { type: 'REMOTE_INFO_UPDATE'; payload: RemoteShareInfo };
+

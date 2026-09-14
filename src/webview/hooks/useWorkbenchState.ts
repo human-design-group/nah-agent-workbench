@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AgentConfig, LayoutMode, SessionMode, TeamConfig, WorkbenchState, HostToWebviewMessage } from '../types/workbench';
+import { AgentConfig, LayoutMode, SessionMode, TeamConfig, WorkbenchState, HostToWebviewMessage, DiagnosticCheckResult } from '../types/workbench';
+import { AgentoSettings, DEFAULT_SETTINGS } from '../types/settings';
 import { getVSCodeApi } from './useVSCodeApi';
 
 const INITIAL_AGENT_MESSAGE = `Hi! Welcome to justbeahuman. The portfolio for Derek Arrington. I’m nah, Derek’s assistant and I’ll be your guide.
@@ -188,6 +189,7 @@ const INITIAL_STATE: WorkbenchState = {
   focusedAgentId: 'agent-humano',
   activeDrawerAgentId: null,
   isOnboarded: false,
+  settings: DEFAULT_SETTINGS,
   remoteInfo: {
     port: 4545,
     shareCode: 'NAH777',
@@ -200,6 +202,8 @@ export function useWorkbenchState() {
   const vscode = getVSCodeApi();
   const [state, setState] = useState<WorkbenchState>(INITIAL_STATE);
   const [showOnboarding, setShowOnboarding] = useState<boolean>(true);
+  const [showSettings, setShowSettings] = useState<boolean>(false);
+  const [diagnosticResults, setDiagnosticResults] = useState<DiagnosticCheckResult | undefined>(undefined);
 
   useEffect(() => {
     vscode.postMessage({
@@ -222,10 +226,28 @@ export function useWorkbenchState() {
               ...prev,
               ...msg.payload,
               isOnboarded: restoredOnboarded,
+              settings: msg.payload.settings ? { ...DEFAULT_SETTINGS, ...msg.payload.settings } : prev.settings,
               agents: msg.payload.agents && msg.payload.agents.length > 0 ? msg.payload.agents : prev.agents,
               panelSlots: msg.payload.panelSlots && msg.payload.panelSlots.length > 0 ? msg.payload.panelSlots : prev.panelSlots,
             }));
           }
+          break;
+        case 'SETTINGS_UPDATED':
+          if (msg.payload) {
+            setState((prev) => ({
+              ...prev,
+              settings: msg.payload,
+            }));
+          }
+          break;
+        case 'DIAGNOSTICS_RESULT':
+          setDiagnosticResults(msg.payload);
+          break;
+        case 'OPEN_SETTINGS':
+          setShowSettings(true);
+          break;
+        case 'OPEN_WALKTHROUGH':
+          setShowOnboarding(true);
           break;
         case 'REMOTE_INFO_UPDATE':
           setState((prev) => ({
@@ -236,6 +258,7 @@ export function useWorkbenchState() {
         case 'RESET_LAYOUT':
           setState(INITIAL_STATE);
           setShowOnboarding(true);
+          setShowSettings(false);
           break;
       }
     };
@@ -243,6 +266,35 @@ export function useWorkbenchState() {
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, []);
+
+  const updateSettings = useCallback((newSettings: AgentoSettings) => {
+    setState((prev) => ({
+      ...prev,
+      settings: newSettings,
+      layoutMode: newSettings.general?.defaultLayout || prev.layoutMode,
+      sessionMode: newSettings.team?.defaultSessionMode || prev.sessionMode,
+    }));
+    vscode.postMessage({
+      type: 'SAVE_SETTINGS',
+      payload: newSettings,
+    });
+  }, [vscode]);
+
+  const resetSettings = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      settings: DEFAULT_SETTINGS,
+    }));
+    vscode.postMessage({
+      type: 'RESET_SETTINGS',
+    });
+  }, [vscode]);
+
+  const runDiagnostics = useCallback(() => {
+    vscode.postMessage({
+      type: 'CHECK_DIAGNOSTICS',
+    });
+  }, [vscode]);
 
   const setLayoutMode = useCallback((mode: LayoutMode) => {
     setState((prev) => ({
@@ -444,6 +496,13 @@ export function useWorkbenchState() {
     state,
     showOnboarding,
     setShowOnboarding,
+    showSettings,
+    setShowSettings,
+    settings: state.settings || DEFAULT_SETTINGS,
+    updateSettings,
+    resetSettings,
+    diagnosticResults,
+    runDiagnostics,
     completeOnboarding,
     setLayoutMode,
     setSessionMode,
