@@ -1,22 +1,96 @@
 :root {
-  --bg-app: #0b0d13;
-  --bg-card: rgba(16, 20, 29, 0.92);
-  --border-card: #1e2638;
+  /* ==========================================================================
+     FIGMA DESIGN SYSTEM VARIABLES (File 3ptQW6Ah2kX0QJYJlT4uJv)
+     ========================================================================== */
+  --color-brand-primary: #0094d9;
+  --color-brand-primary-alpha-10: #0094d91a;
+  --color-brand-primary-alpha-25: #0094d940;
+  --color-brand-primary-alpha-40: #0094d966;
+  --color-brand-primary-alpha-50: #0094d980;
+  --color-brand-primary-alpha-65: #0094d9a6;
+  --color-brand-primary-alpha-80: #0094d9cc;
+  --color-brand-primary-alpha-90: #0094d9e5;
+
+  --color-brand-secondary: #2287b6;
+  --color-brand-secondary-alpha-10: #2287b61a;
+  --color-brand-secondary-alpha-25: #2287b640;
+  --color-brand-secondary-alpha-40: #2287b666;
+  --color-brand-secondary-alpha-50: #2287b680;
+  --color-brand-secondary-alpha-65: #2287b6a6;
+  --color-brand-secondary-alpha-80: #2287b6cc;
+  --color-brand-secondary-alpha-90: #2287b6e5;
+
+  --color-brand-tertiary: #0f1d24;
+  --color-brand-tertiary-alpha-10: #0f1d241a;
+  --color-brand-tertiary-alpha-25: #0f1d2440;
+  --color-brand-tertiary-alpha-40: #0f1d2466;
+  --color-brand-tertiary-alpha-50: #0f1d2480;
+  --color-brand-tertiary-alpha-65: #0f1d24a6;
+  --color-brand-tertiary-alpha-80: #0f1d24cc;
+  --color-brand-tertiary-alpha-90: #0f1d24e5;
+
+  --color-brand-almost-black: #080f12;
+  --color-brand-almost-black-alpha-10: #080f121a;
+  --color-brand-almost-black-alpha-25: #080f1240;
+  --color-brand-almost-black-alpha-40: #080f1266;
+  --color-brand-almost-black-alpha-50: #080f1280;
+  --color-brand-almost-black-alpha-65: #080f12a6;
+  --color-brand-almost-black-alpha-80: #080f12cc;
+  --color-brand-almost-black-alpha-90: #080f12e5;
+
+  --color-brand-almost-white: #f5fcff;
+  --color-brand-almost-white-alpha-10: #f5fcff1a;
+  --color-brand-almost-white-alpha-25: #f5fcff40;
+  --color-brand-almost-white-alpha-40: #f5fcff66;
+  --color-brand-almost-white-alpha-50: #f5fcff80;
+  --color-brand-almost-white-alpha-65: #f5fcffa6;
+  --color-brand-almost-white-alpha-80: #f5fcffcc;
+  --color-brand-almost-white-alpha-90: #f5fcffe5;
+
+  --color-brand-neutral-dark: #191a1a;
+  --color-brand-neutral-mid: #696c6e;
+  --color-brand-neutral-light: #939698;
+  --color-brand-accent-green: #2ead25;
+  --color-brand-accent-orange: #d96b00;
+  --color-brand-accent-yellow: #fff200;
+  --color-brand-accent-red: #cc2a2a;
+  --color-accents-cyan: #55bef0;
+  --color-text-primary: #f5fcff;
+
+  /* App Mappings */
+  --bg-app: var(--color-brand-almost-black);
+  --bg-card: rgba(15, 29, 36, 0.90);
+  --border-card: rgba(0, 148, 217, 0.35);
   --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-cyan: #38bdf8;
+  --border-cyan: var(--color-brand-primary);
   --border-agent-bubble: #1e3a5f;
   --bg-agent-bubble: rgba(15, 23, 42, 0.75);
-  --bg-user-bubble: rgba(14, 116, 144, 0.22);
-  --border-user-bubble: #0284c7;
-  --text-main: #f1f5f9;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
-  --accent-green: #22c55e;
-  --accent-orange: #f59e0b;
-  --accent-cyan: #38bdf8;
+  --bg-user-bubble: rgba(0, 148, 217, 0.18);
+  --border-user-bubble: var(--color-brand-primary);
+  --text-main: var(--color-brand-almost-white);
+  --text-muted: var(--color-brand-neutral-light);
+  --text-dim: var(--color-brand-neutral-mid);
+  --accent-green: var(--color-brand-accent-green);
+  --accent-orange: var(--color-brand-accent-orange);
+  --accent-cyan: var(--color-accents-cyan);
   --bg-input: #121722;
   --bg-pill: #151b27;
   --border-pill: #283548;
+
+  /* Spacings */
+  --spacing-xxs: 2px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 32px;
+
+  /* Radii */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-pill: 20px;
 }
 
 * {
@@ -29,8 +103,8 @@ body, html {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  font-size: 13px;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
   color: var(--text-main);
   background: var(--bg-app);
 }
@@ -1151,14 +1225,14 @@ body, html {
   position: relative;
 }
 
-/* Control Bar */
+/* Control Bar (Figma 2028:6978 & 2023:4609) */
 .control-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 14px;
+  padding: 0 16px;
   background: rgba(13, 17, 24, 0.96);
-  border-bottom: 1px solid var(--border-cyan);
+  border-bottom: 1px solid var(--color-brand-primary);
   backdrop-filter: blur(12px);
   z-index: 50;
   height: 38px;
@@ -1171,21 +1245,23 @@ body, html {
   gap: 8px;
 }
 
-.brand-badge {
+.brand-badge-agento {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-sm);
 }
 
-.brand-icon {
-  color: #38bdf8;
+.brand-icon-agento {
+  flex-shrink: 0;
 }
 
 .brand-title {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  color: #ffffff;
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 100%;
+  color: var(--color-brand-almost-white);
+  letter-spacing: 0;
 }
 
 .control-bar .bar-right {
@@ -1194,46 +1270,55 @@ body, html {
   gap: 8px;
 }
 
-/* Control Center Toggle Button */
-.btn-control-center {
+/* Mode & Mission Control Pill Buttons (Figma 2028:5297 & 2028:5292) */
+.btn-mode-pill {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: rgba(56, 189, 248, 0.1);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  border-radius: 6px;
-  font-size: 11.5px;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-brand-primary-alpha-40);
+  border: 1px solid var(--color-accents-cyan);
+  border-radius: var(--radius-md);
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 10px;
   font-weight: 500;
+  line-height: 100%;
+  color: var(--color-brand-almost-white);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
-.btn-control-center:hover,
-.btn-control-center.active {
-  background: rgba(56, 189, 248, 0.22);
-  border-color: #38bdf8;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+.btn-mode-pill:hover {
+  background: var(--color-brand-primary-alpha-65);
+  box-shadow: 0 0 10px var(--color-brand-primary-alpha-40);
 }
 
-/* Expanded Controls Strip (Right to Left Slide) */
-.expanded-controls-strip {
+.btn-mission-control-pill {
   display: flex;
   align-items: center;
-  gap: 6px;
-  animation: slideLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-brand-primary-alpha-40);
+  border: 1px solid var(--color-accents-cyan);
+  border-radius: var(--radius-md);
+  font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 100%;
+  color: var(--color-brand-almost-white);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
-@keyframes slideLeft {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+.btn-mission-control-pill:hover {
+  background: var(--color-brand-primary-alpha-65);
+  box-shadow: 0 0 10px var(--color-brand-primary-alpha-40);
+}
+
+.btn-mode-icon {
+  color: var(--color-brand-almost-white);
 }
 
 .btn-control-item {

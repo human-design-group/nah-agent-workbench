@@ -1,9 +1,10 @@
 {
-  "name": "agent-workbench",
-  "displayName": "Agent Workbench",
-  "description": "Multi-Agent Mission Control & Responsive Grid for Cursor and VS Code",
+  "name": "agento",
+  "displayName": "Agento — Agent Workbench",
+  "description": "Unified Multi-Agent Mission Control & Responsive Grid for Cursor and VS Code",
   "version": "0.1.0",
   "publisher": "human-design-group",
+  "icon": "media/agento-logo.png",
   "author": {
     "name": "Human Design Group",
     "url": "https://thehumandesigngroup.com"
@@ -23,41 +24,55 @@
     "Other"
   ],
   "keywords": [
+    "agento",
     "agent",
     "multi-agent",
     "workbench",
     "cursor",
-    "claude",
-    "codex",
+    "notahuman",
+    "antigravity",
+    "openclaw",
     "opencode",
-    "hermes",
-    "openclaw"
+    "hermes"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
+    "onCommand:agento.open",
     "onCommand:workbench.open",
     "onCommand:nah.openWorkbench"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "workbench.open",
-        "title": "Open Multi-Agent Mission Control",
-        "category": "Agent Workbench",
+        "command": "agento.open",
+        "title": "Open Agent Workbench",
+        "category": "Agento",
         "icon": "$(layout-grid)"
       },
       {
-        "command": "nah.openWorkbench",
-        "title": "Open Multi-Agent Mission Control (Legacy)",
-        "category": "Agent Workbench"
+        "command": "workbench.open",
+        "title": "Open Agent Workbench (Alias)",
+        "category": "Agento"
       },
       {
-        "command": "workbench.resetLayout",
+        "command": "nah.openWorkbench",
+        "title": "Open Agent Workbench (Legacy)",
+        "category": "Agento"
+      },
+      {
+        "command": "agento.resetLayout",
         "title": "Reset Workbench Layout",
-        "category": "Agent Workbench"
+        "category": "Agento"
       }
     ],
     "keybindings": [
+      {
+        "command": "agento.open",
+        "key": "cmd+alt+n",
+        "mac": "cmd+alt+n",
+        "win": "ctrl+alt+n",
+        "linux": "ctrl+alt+n"
+      },
       {
         "command": "workbench.open",
         "key": "cmd+alt+n",
@@ -69,10 +84,16 @@
     "menus": {
       "commandPalette": [
         {
+          "command": "agento.open"
+        },
+        {
+          "command": "agento.resetLayout"
+        },
+        {
           "command": "workbench.open"
         },
         {
-          "command": "workbench.resetLayout"
+          "command": "nah.openWorkbench"
         }
       ]
     },
@@ -98,8 +119,8 @@
     "build": "node build.mjs",
     "watch": "node build.mjs --watch",
     "typecheck": "tsc --noEmit",
-    "package": "node build.mjs && npx @vscode/vsce package --no-dependencies -o dist/agent-workbench-0.1.0.vsix",
-    "install-ext": "npm run package && cursor --install-extension dist/agent-workbench-0.1.0.vsix --force"
+    "package": "node build.mjs && npx @vscode/vsce package --no-dependencies -o dist/agento-0.1.0.vsix",
+    "install-ext": "npm run package && cursor --install-extension dist/agento-0.1.0.vsix --force"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",

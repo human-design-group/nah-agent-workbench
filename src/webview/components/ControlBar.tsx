@@ -12,9 +12,10 @@ import {
   Maximize2,
   RefreshCw,
   ChevronDown,
-  Bot,
-  Check
+  Check,
+  Settings
 } from 'lucide-react';
+import { AgentoLogo } from './AgentoLogo';
 import { SessionModeModal } from './SessionModeModal';
 import { ExtensionMoreMenu } from './ExtensionMoreMenu';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -79,56 +80,54 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   return (
     <>
       <header className={`control-bar ${isExpanded ? 'is-expanded' : 'is-compact'}`}>
-        {/* Left: Workbench Title & Brand */}
+        {/* Left: Agento Logo + Product Title */}
         <div className="bar-left">
-          <div className="brand-badge">
-            <Bot size={16} className="brand-icon text-cyan" />
+          <div className="brand-badge-agento">
+            <AgentoLogo size={24} className="brand-icon-agento" />
             <span className="brand-title">Agent Workbench</span>
           </div>
         </div>
 
         {/* Right: Controls Strip */}
         <div className="bar-right">
-          {/* Standalone Add Agent Button (Expanded View) */}
-          {isExpanded && (
-            <div className="relative" ref={addAgentDropdownRef}>
-              <button
-                className="btn-standalone"
-                onClick={() => setIsAddAgentDropdownOpen(!isAddAgentDropdownOpen)}
-                title="Add Agent to Workbench"
-              >
-                <span>Add Agent to Workbench</span>
-                <Plus size={13} className="text-cyan ml-1" />
-              </button>
+          {/* Add Agent Button / Dropdown (Figma 2028:5297) */}
+          <div className="relative" ref={addAgentDropdownRef}>
+            <button
+              className="btn-mode-pill"
+              onClick={() => setIsAddAgentDropdownOpen(!isAddAgentDropdownOpen)}
+              title="Add Agent to Workbench"
+            >
+              <span>Add Agent to Workbench</span>
+              <Plus size={14} className="btn-mode-icon ml-1" />
+            </button>
 
-              {isAddAgentDropdownOpen && (
-                <div className="layout-dropdown-menu add-agent-dropdown">
-                  <div className="dropdown-heading">Select Agent to Open</div>
-                  {availableAgents.map((agent) => {
-                    const isOpen = currentSlotKeys.includes(agent.key);
-                    return (
-                      <button
-                        key={agent.id}
-                        className={`dropdown-item ${isOpen ? 'active' : ''}`}
-                        onClick={() => {
-                          onAddAgent(agent.key);
-                          setIsAddAgentDropdownOpen(false);
-                        }}
-                      >
-                        <span style={{ textTransform: 'capitalize' }}>{agent.name}</span>
-                        <span className="text-muted" style={{ fontSize: '10px', marginLeft: 'auto' }}>
-                          ({agent.runtime})
-                        </span>
-                        {isOpen && <Check size={12} className="text-cyan ml-1" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
+            {isAddAgentDropdownOpen && (
+              <div className="layout-dropdown-menu add-agent-dropdown">
+                <div className="dropdown-heading">Select Agent to Open</div>
+                {availableAgents.map((agent) => {
+                  const isOpen = currentSlotKeys.includes(agent.key);
+                  return (
+                    <button
+                      key={agent.id}
+                      className={`dropdown-item ${isOpen ? 'active' : ''}`}
+                      onClick={() => {
+                        onAddAgent(agent.key);
+                        setIsAddAgentDropdownOpen(false);
+                      }}
+                    >
+                      <span style={{ textTransform: 'capitalize' }}>{agent.name}</span>
+                      <span className="text-muted" style={{ fontSize: '10px', marginLeft: 'auto' }}>
+                        ({agent.runtime})
+                      </span>
+                      {isOpen && <Check size={12} className="text-cyan ml-1" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
-          {/* Encompassed Control Center Box (Figma 2023:4609) */}
+          {/* Encompassed Control Center (Figma 2023:4609 & 2028:5292) */}
           <div className={`control-center-encompassed ${isExpanded ? 'is-open' : ''}`}>
             {isExpanded && (
               <div className="encompassed-inner-controls">
@@ -186,14 +185,14 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               </div>
             )}
 
-            {/* Toggle Button for Control Center */}
+            {/* Mission Control Button (Figma 2028:5292) */}
             <button
-              className="btn-control-center-toggle"
+              className="btn-mission-control-pill"
               onClick={() => setIsExpanded(!isExpanded)}
               title="Toggle Control Center Toolbar"
             >
-              <Sliders size={13} className="text-cyan mr-1" />
               <span>Control Center</span>
+              <Settings size={14} className="btn-mode-icon ml-1" />
             </button>
           </div>
 
@@ -204,7 +203,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             title="Reload Workbench & Sync Agents"
           >
             <span>Reload</span>
-            <RefreshCw size={13} className="text-cyan ml-1" />
+            <RefreshCw size={12} className="text-cyan ml-1" />
           </button>
 
           {/* Standalone More Options Button */}

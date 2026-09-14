@@ -1,6 +1,6 @@
 ---
 type: project
-name: "Agent Workbench"
+name: "Agento — Agent Workbench"
 code: "NAH-AWB"
 slug: "nah-agent-workbench"
 org: "human-design-group"
@@ -23,18 +23,18 @@ metadata:
     opencode: true
     codex: true
 secrets: []
-tags: ["ai", "agents", "cursor-extension", "multi-agent", "workbench", "agentos", "human-design-group"]
+tags: ["ai", "agents", "cursor-extension", "multi-agent", "workbench", "agento", "agentos", "human-design-group"]
 ---
 
-# Agent Workbench · `NAH-AWB`
+# Agento — Agent Workbench · `NAH-AWB`
 
-> **What this is** — A multi-agent mission control & responsive grid dashboard for Cursor, VS Code, and AgentOS.
+> **What this is** — A unified multi-agent mission control & responsive grid dashboard for Cursor, VS Code, and AgentOS.
 > **Org / brand** — human-design-group / human design group
 > **Repo** — [github.com/human-design-group/nah-agent-workbench](https://github.com/human-design-group/nah-agent-workbench)
 > **Kanban Board** — [Agent Workbench Product Board](https://github.com/orgs/human-design-group/projects/1)
 
 ## Product Identity & Value Proposition
-Cursor and VS Code users are currently locked to rigid single-sidebar or stacked panels when working with multiple AI agents. **Agent Workbench** unlocks full-width, responsive multi-agent workspaces:
+Cursor and VS Code users are currently locked to rigid single-sidebar or stacked panels when working with multiple AI agents. **Agento** (*Agent Workbench*) unlocks full-width, responsive multi-agent workspaces:
 - **Responsive 2x2 Grid & 1x4 Columns** with butter-smooth sub-pixel draggable resize dividers.
 - **Dedicated Agent Viewports** for parallel execution across AntiGravity (Astro), OpenClaw (Humano), Hermes (Uno), OpenCode (Omo), and custom agents.
 - **Git Worktree & Context Integration**: Direct visibility into worktree branches, modified counts, staged files, and one-click branch forking.

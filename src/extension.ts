@@ -54,8 +54,8 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     currentPanel = vscode.window.createWebviewPanel(
-      'nahWorkbench',
-      'Agent Workbench',
+      'agentoWorkbench',
+      'Agento — Agent Workbench',
       column || vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -68,8 +68,8 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     currentPanel.iconPath = {
-      light: vscode.Uri.file(path.join(context.extensionPath, 'media', 'icon-bot.svg')),
-      dark: vscode.Uri.file(path.join(context.extensionPath, 'media', 'icon-bot.svg')),
+      light: vscode.Uri.file(path.join(context.extensionPath, 'media', 'agento-logo.svg')),
+      dark: vscode.Uri.file(path.join(context.extensionPath, 'media', 'agento-logo.svg')),
     };
 
     currentPanel.webview.html = getWebviewContent(context, currentPanel.webview);
@@ -94,7 +94,7 @@ export function activate(context: vscode.ExtensionContext) {
             await context.workspaceState.update(STATE_STORAGE_KEY, message.payload);
             break;
           case 'LOG':
-            console.log(`[nah-workbench webview ${message.payload.level}] ${message.payload.message}`);
+            console.log(`[agento webview ${message.payload.level}] ${message.payload.message}`);
             break;
           case 'EXECUTE_COMMAND':
             await vscode.commands.executeCommand(message.payload.command);
@@ -146,6 +146,7 @@ export function activate(context: vscode.ExtensionContext) {
     );
   };
 
+  const agentoOpenCommand = vscode.commands.registerCommand('agento.open', openWorkbench);
   const openWorkbenchCommand = vscode.commands.registerCommand('nah.openWorkbench', openWorkbench);
   const openWorkbenchAlias = vscode.commands.registerCommand('workbench.open', openWorkbench);
 
@@ -172,14 +173,17 @@ export function activate(context: vscode.ExtensionContext) {
     }
   };
 
+  const agentoResetLayoutCommand = vscode.commands.registerCommand('agento.resetLayout', resetLayout);
   const resetLayoutCommand = vscode.commands.registerCommand('nah.resetWorkbenchLayout', resetLayout);
   const resetLayoutAlias = vscode.commands.registerCommand('workbench.resetLayout', resetLayout);
 
   context.subscriptions.push(
+    agentoOpenCommand,
     openWorkbenchCommand,
     openWorkbenchAlias,
     copySessionUrlCommand,
     copyWorkspaceUrlCommand,
+    agentoResetLayoutCommand,
     resetLayoutCommand,
     resetLayoutAlias
   );
