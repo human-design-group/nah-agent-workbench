@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AgentConfig } from '../types/workbench';
-import { Plus, ChevronDown, ChevronRight, Circle, ArrowUp, Mic, Check, Copy, Terminal, Cpu, FolderGit2, GitBranch, GitFork } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Circle, ArrowUp, Mic, Check, Copy, Terminal, Cpu, Folder, GitFork, AudioLines, RotateCcw, PlusCircle } from 'lucide-react';
 import { AddContextMenu } from './AddContextMenu';
 import { useClickOutside } from '../hooks/useClickOutside';
 
@@ -94,6 +94,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
   };
 
   const MODELS = [
+    'OmniRoute - Humano Assistant',
     'OmniRoute - Uno Orchestrate',
     'OmniRoute - Omo Production',
     'Gemini 2.5 Flash',
@@ -101,7 +102,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
     'DeepSeek-R1 (Bifrost)'
   ];
 
-  const PERMS = ['Supervised', 'Auto-Approve', 'Autonomous', 'Sandbox'];
+  const PERMS = ['Selector Label', 'Supervised', 'Auto-Approve', 'Autonomous', 'Sandbox'];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
@@ -149,16 +150,24 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
             <div className={msg.sender === 'user' ? 'bubble-user' : 'bubble-agent'}>
               <div className="bubble-text">{msg.content}</div>
               
-              {/* Message Footer Meta (tokens, latency, copy) */}
+              {/* Message Footer Meta (tokens, latency, copy, retry) */}
               <div className="bubble-meta">
-                {msg.tokens && <span>{msg.tokens} tokens</span>}
-                {msg.latencyMs && <span>· {(msg.latencyMs / 1000).toFixed(1)}s</span>}
+                <span className="bubble-tokens">{msg.tokens ? `${msg.tokens.toLocaleString()} tokens` : '12,345 tokens'}</span>
+                <span className="bubble-latency">{msg.latencyMs ? `${(msg.latencyMs / 1000).toFixed(1)}s` : '0.5s'}</span>
                 <button
+                  type="button"
                   className="copy-btn"
                   onClick={() => handleCopy(msg.content, msg.id)}
                   title="Copy message"
                 >
-                  {copiedId === msg.id ? <Check size={11} color="#22c55e" /> : <Copy size={11} />}
+                  {copiedId === msg.id ? <Check size={10} color="#22c55e" /> : <Copy size={10} />}
+                </button>
+                <button
+                  type="button"
+                  className="retry-btn"
+                  title="Regenerate / Retry"
+                >
+                  <RotateCcw size={10} />
                 </button>
               </div>
             </div>
@@ -169,64 +178,59 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
 
       {/* Composer Input Block (Figma 2101:12865) */}
       <form className="agent-composer-container" onSubmit={handleSubmit}>
-        {/* Project & Git & Worktree Sub-bar (Figma 2101:12950) */}
+        {/* Project & Git & Worktree Flat Sub-bar (Figma 2101:12950) */}
         <div className="project-and-git-and-worktree-info">
           <div className="composer-git-left">
-            <div className="composer-git-badge project-badge">
-              <FolderGit2 size={11} className="composer-git-icon" />
-              <span>{gitStatus?.project || 'hdg-projects/Agent Workbench'}</span>
-            </div>
-            <div className="composer-git-badge branch-badge">
-              <GitBranch size={10} className="composer-git-icon" />
-              <span>{gitStatus?.branch || 'main'}</span>
-            </div>
-            <div className="composer-git-stats">
-              {gitStatus?.isClean !== false ? (
-                <span className="stats-clean">Clean</span>
-              ) : (
-                <>
-                  <span className="stats-add">+{gitStatus?.additions ?? 14}</span>
-                  <span className="stats-del">-{gitStatus?.deletions ?? 3}</span>
-                </>
-              )}
-            </div>
+            <Folder size={11} className="composer-folder-icon" />
+            <span className="composer-git-path-text">
+              {agent.gitStatus ? `${agent.gitStatus.workspace} / ${agent.gitStatus.worktree}` : 'notahuman / agent-name / worktree-name / branch-name'}
+            </span>
           </div>
 
           <div className="composer-git-right">
+            <div className="composer-git-stats">
+              <span className="stat-mod">*{agent.gitStatus?.modified ?? 14}</span>
+              <span className="stat-add">+{agent.gitStatus?.staged ?? 28}</span>
+              <span className="stat-untrack">!{agent.gitStatus?.untracked ?? 253}</span>
+              <span className="stat-div">?{agent.gitStatus?.divergence ?? 3318}</span>
+            </div>
+
             <button
               type="button"
               className="composer-fork-btn"
               onClick={onFork}
               title="Fork Session / Branch Worktree"
             >
-              <GitFork size={10} />
+              <GitFork size={10} className="fork-icon-cyan" />
               <span>Fork</span>
             </button>
           </div>
         </div>
 
+        {/* Input Row (Figma 2101:12952) */}
         <div className="composer-input-row">
           <input
             type="text"
             className="composer-textarea"
-            placeholder={isRecording ? 'Listening for voice input...' : 'Type your message...'}
+            placeholder={isRecording ? 'Listening for voice input...' : 'Type your message'}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
           />
         </div>
 
+        {/* Controls Toolbar (Figma 2101:12953) */}
         <div className="composer-toolbar">
           <div className="composer-controls-left">
-            {/* Sized-matched Add Context button (Matches Send button dimensions) */}
+            {/* Cyan Circular Add Context Button */}
             <div className="relative" ref={addContextMenuRef}>
               <button
                 type="button"
                 className="btn-add-context-circle"
                 onClick={() => setShowAddContextMenu(!showAddContextMenu)}
-                title="Add Media and Context (+)"
+                title="Add Media and Context (⊕)"
               >
-                <Plus size={14} strokeWidth={2.5} />
+                <PlusCircle size={15} className="text-cyan" />
               </button>
 
               <AddContextMenu
@@ -236,14 +240,14 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
               />
             </div>
 
-            {/* Permissions Pill */}
+            {/* Selector Label Pill */}
             <div className="dropdown-pill-wrapper" ref={permsMenuRef}>
               <div
                 className="control-pill"
                 title={`Permissions Mode: ${agent.permissionsMode}`}
                 onClick={() => setShowPermsMenu(!showPermsMenu)}
               >
-                <span>Permissions</span>
+                <span>Selector Label</span>
                 <ChevronDown size={10} className="text-muted" />
               </div>
               {showPermsMenu && (
@@ -265,16 +269,16 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
               )}
             </div>
 
-            {/* Model Selector Pill (Full width / adaptive) */}
+            {/* Model Selector Pill with Rainbow Gradient Underline */}
             <div className="dropdown-pill-wrapper model-pill-wrapper" ref={modelMenuRef}>
               <div
-                className="control-pill model-control-pill"
+                className="control-pill model-control-pill with-rainbow"
                 title={`Full Model: ${agent.selectedModel}`}
                 onClick={() => setShowModelMenu(!showModelMenu)}
               >
-                <Circle size={7} color="#38bdf8" fill="#38bdf8" className="flex-shrink-0" />
                 <span className="model-name-text">{agent.selectedModel}</span>
                 <ChevronDown size={10} className="text-muted flex-shrink-0" />
+                <div className="model-rainbow-bar" />
               </div>
               {showModelMenu && (
                 <div className="pill-dropdown-menu model-dropdown">
@@ -298,19 +302,19 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
           </div>
 
           <div className="composer-controls-right">
-            {/* Voice Input Button with Microphone Icon */}
+            {/* Waveform Audio Voice Button */}
             <button
               type="button"
               className={`icon-button voice-btn ${isRecording ? 'voice-active' : ''}`}
               onClick={() => setIsRecording(!isRecording)}
-              title={isRecording ? 'Recording Voice...' : 'Start Voice Input (Mic)'}
+              title={isRecording ? 'Recording Voice...' : 'Voice Input (Waveform)'}
             >
-              <Mic size={14} color={isRecording ? '#38bdf8' : '#94a3b8'} />
+              <AudioLines size={15} color={isRecording ? '#00f0ff' : '#0094d9'} />
             </button>
 
-            {/* Submit Arrow (Cyan Theme Primary) */}
+            {/* Submit Arrow Circle (Cyan Theme Primary) */}
             <button type="submit" className="send-circle-btn" title="Send Message (Enter)">
-              <ArrowUp size={14} strokeWidth={2.5} />
+              <ArrowUp size={13} strokeWidth={2.5} />
             </button>
           </div>
         </div>

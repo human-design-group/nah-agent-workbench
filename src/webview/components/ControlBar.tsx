@@ -81,26 +81,24 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
   return (
     <>
-      <header className={`control-bar ${isExpanded ? 'is-expanded' : 'is-compact'}`}>
-        {/* Left: Agento Logo + Product Title */}
-        <div className="bar-left">
-          <div className="brand-badge-agento">
-            <AgentoLogo size={24} className="brand-icon-agento" />
-            <span className="brand-title">Agent Workbench</span>
-          </div>
+      <header className="main-top-header">
+        {/* Left: Agento Wordmark Logo (Figma 2090:10844) */}
+        <div className="header-left">
+          <AgentoLogo height={22} className="brand-wordmark-agento" />
         </div>
 
-        {/* Right: Controls Strip */}
-        <div className="bar-right">
-          {/* Add Agent Button / Dropdown (Figma 2028:5297) */}
+        {/* Right: Discrete Action Buttons (Figma 2089:10028) */}
+        <div className="header-actions-right">
+          {/* 1. Add Agent + */}
           <div className="relative" ref={addAgentDropdownRef}>
             <button
-              className="btn-mode-pill"
+              type="button"
+              className="header-action-btn"
               onClick={() => setIsAddAgentDropdownOpen(!isAddAgentDropdownOpen)}
               title="Add Agent to Workbench"
             >
-              <span>Add Agent to Workbench</span>
-              <Plus size={14} className="btn-mode-icon ml-1" />
+              <span>Add Agent</span>
+              <Plus size={13} className="header-action-icon" />
             </button>
 
             {isAddAgentDropdownOpen && (
@@ -129,107 +127,58 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             )}
           </div>
 
-          {/* Encompassed Control Center (Figma 2023:4609 & 2028:5292) */}
-          <div className={`control-center-encompassed ${isExpanded ? 'is-open' : ''}`}>
-            {isExpanded && (
-              <div className="encompassed-inner-controls">
-                {/* Session Mode */}
-                <button
-                  className="btn-encompassed-item"
-                  onClick={() => setIsSessionModalOpen(true)}
-                  title="Configure Session Mode (Independent vs Team)"
-                >
-                  <Users size={12} className="text-cyan mr-1" />
-                  <span>Session Mode {sessionMode === 'team' ? '(Team)' : '(Ind)'}</span>
-                  <ChevronDown size={11} className="ml-1 text-cyan" />
-                </button>
-
-                {/* Layout Dropdown */}
-                <div className="relative" ref={layoutDropdownRef}>
-                  <button
-                    className="btn-encompassed-item"
-                    onClick={() => setIsLayoutDropdownOpen(!isLayoutDropdownOpen)}
-                    title="Select Layout Mode"
-                  >
-                    <LayoutGrid size={12} className="text-cyan mr-1" />
-                    <span>Layout</span>
-                    <ChevronDown size={11} className="ml-1 text-cyan" />
-                  </button>
-
-                  {isLayoutDropdownOpen && (
-                    <div className="layout-dropdown-menu">
-                      {layouts.map((l) => (
-                        <button
-                          key={l.id}
-                          className={`dropdown-item ${currentLayout === l.id ? 'active' : ''}`}
-                          onClick={() => {
-                            onSelectLayout(l.id);
-                            setIsLayoutDropdownOpen(false);
-                          }}
-                        >
-                          {l.icon}
-                          <span>{l.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Focus Mode Toggle */}
-                <button
-                  className={`btn-encompassed-item ${currentLayout === 'focus' ? 'active-cyan' : ''}`}
-                  onClick={() => onSelectLayout(currentLayout === 'focus' ? 'vertical' : 'focus')}
-                  title="Toggle Focus Mode"
-                >
-                  <span>Focus Mode</span>
-                  <Maximize2 size={12} className="text-cyan ml-1" />
-                </button>
-              </div>
-            )}
-
-            {/* Mission Control Button (Figma 2028:5292) */}
-            <button
-              className="btn-mission-control-pill"
-              onClick={() => setIsExpanded(!isExpanded)}
-              title="Toggle Control Center Toolbar"
-            >
-              <span>Control Center</span>
-              <Settings size={14} className="btn-mode-icon ml-1" />
-            </button>
-          </div>
-
-          {/* Standalone Reload Button */}
+          {/* 2. Focus Mode ⊙ */}
           <button
-            className="btn-standalone"
-            onClick={onReload}
-            title="Reload Workbench & Sync Agents"
+            type="button"
+            className={`header-action-btn ${currentLayout === 'focus' ? 'active-action' : ''}`}
+            onClick={() => onSelectLayout(currentLayout === 'focus' ? 'grid' : 'focus')}
+            title="Toggle Single Agent Focus Mode"
           >
-            <span>Reload</span>
-            <RefreshCw size={12} className="text-cyan ml-1" />
+            <span>Focus Mode</span>
+            <Maximize2 size={12} className="header-action-icon" />
           </button>
 
-          {/* Standalone More Options Button */}
-          <div className="relative" ref={moreMenuRef}>
+          {/* 3. Layout ☲ */}
+          <div className="relative" ref={layoutDropdownRef}>
             <button
-              className="btn-standalone-more"
-              onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-              title="Extension Settings & Remote Control"
+              type="button"
+              className="header-action-btn"
+              onClick={() => setIsLayoutDropdownOpen(!isLayoutDropdownOpen)}
+              title="Select Grid / Window Layout"
             >
-              <MoreVertical size={15} />
+              <span>Layout</span>
+              <LayoutGrid size={12} className="header-action-icon" />
             </button>
 
-            <ExtensionMoreMenu
-              isOpen={isMoreMenuOpen}
-              onClose={() => setIsMoreMenuOpen(false)}
-              remoteInfo={remoteInfo}
-              onOpenSettings={onOpenSettings}
-              onOpenWalkthrough={onOpenWalkthrough}
-              onExportSession={onExportSession}
-              onFindInSession={onFindInSession}
-              onDuplicateSession={onDuplicateSession}
-              onCopyRemoteUrl={onCopyRemoteUrl}
-            />
+            {isLayoutDropdownOpen && (
+              <div className="layout-dropdown-menu">
+                {layouts.map((l) => (
+                  <button
+                    key={l.id}
+                    className={`dropdown-item ${currentLayout === l.id ? 'active' : ''}`}
+                    onClick={() => {
+                      onSelectLayout(l.id);
+                      setIsLayoutDropdownOpen(false);
+                    }}
+                  >
+                    {l.icon}
+                    <span>{l.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* 4. Session Control ⚙ */}
+          <button
+            type="button"
+            className="header-action-btn"
+            onClick={() => setIsSessionModalOpen(true)}
+            title="Session Control & Concept 2 Config"
+          >
+            <span>Session Control</span>
+            <Settings size={12} className="header-action-icon" />
+          </button>
         </div>
       </header>
 

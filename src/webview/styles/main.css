@@ -120,24 +120,78 @@ body, html {
   width: 100%;
   height: 100%;
   position: relative;
-  background-color: #0b0d13;
+  background-color: #080c10;
+  /* Dark ornamental damask / baroque texture effect from Figma design */
   background-image: 
-    radial-gradient(circle at 50% 50%, rgba(30, 41, 59, 0.35) 0%, rgba(11, 13, 19, 0.95) 100%),
-    radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
-  background-size: 100% 100%, 24px 24px;
+    radial-gradient(ellipse at 50% 30%, rgba(0, 148, 217, 0.08) 0%, rgba(5, 10, 15, 0.96) 80%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.015) 0, rgba(255, 255, 255, 0.015) 1px, transparent 0, transparent 16px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.015) 0, rgba(255, 255, 255, 0.015) 1px, transparent 0, transparent 16px);
+  background-size: 100% 100%, 32px 32px, 32px 32px;
 }
 
-/* Control Bar (Header) */
-.control-bar {
+/* Main Top Header (Figma 2089:10024 & 2089:9879) */
+.main-top-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 14px;
-  background: rgba(13, 17, 24, 0.96);
-  border-bottom: 1px solid var(--border-card);
-  backdrop-filter: blur(12px);
-  z-index: 20;
-  height: 38px;
+  padding: 4px 16px;
+  height: 36px;
+  background: rgba(8, 14, 22, 0.88);
+  border-bottom: 1px solid rgba(0, 148, 217, 0.35);
+  box-shadow: 0 1px 12px rgba(0, 148, 217, 0.15);
+  backdrop-filter: blur(16px);
+  z-index: 50;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.brand-wordmark-agento {
+  display: block;
+}
+
+.header-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.header-action-btn:hover {
+  background: rgba(0, 148, 217, 0.15);
+  border-color: rgba(0, 148, 217, 0.5);
+  color: #00f0ff;
+}
+
+.header-action-btn.active-action {
+  background: rgba(0, 148, 217, 0.2);
+  border-color: #0094d9;
+  color: #00f0ff;
+}
+
+.header-action-icon {
+  color: #0094d9;
+}
+
+.header-action-btn:hover .header-action-icon {
+  color: #00f0ff;
 }
 
 .brand-section {
@@ -237,13 +291,13 @@ body, html {
   border-color: #38bdf8;
 }
 
-/* Grid Stage & Panels */
+/* Grid Stage & Panels (Figma 2001:213 2x2 Grid) */
 .grid-stage {
   flex: 1;
   width: 100%;
-  height: calc(100% - 38px);
+  height: calc(100% - 36px);
   overflow: hidden;
-  padding: 6px;
+  padding: 8px;
 }
 
 .agent-card {
@@ -251,24 +305,25 @@ body, html {
   flex-direction: column;
   width: 100%;
   height: 100%;
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
-  border-radius: 8px;
+  background: rgba(8, 15, 22, 0.84);
+  border: 1px solid rgba(0, 148, 217, 0.25);
+  border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(16px);
   position: relative;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-/* Active Focus Border (Cyan 1px) */
+/* Active Focus Border */
 .agent-card-focused {
-  border-color: var(--accent-cyan) !important;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25), 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+  border-color: #0094d9 !important;
+  box-shadow: 0 0 16px rgba(0, 148, 217, 0.3), 0 4px 20px rgba(0, 0, 0, 0.6) !important;
 }
 
 /* Resize Handles */
 .resize-handle-vertical {
-  width: 6px;
+  width: 8px;
   height: 100%;
   cursor: col-resize;
   position: relative;
@@ -279,12 +334,12 @@ body, html {
 }
 
 .resize-handle-vertical:hover .handle-line {
-  background: var(--border-cyan);
+  background: #00f0ff;
 }
 
 .resize-handle-horizontal {
   width: 100%;
-  height: 6px;
+  height: 8px;
   cursor: row-resize;
   position: relative;
   display: flex;
@@ -294,11 +349,11 @@ body, html {
 }
 
 .resize-handle-horizontal:hover .handle-line {
-  background: var(--border-cyan);
+  background: #00f0ff;
 }
 
 .handle-line {
-  background: var(--border-card);
+  background: rgba(0, 148, 217, 0.3);
   border-radius: 2px;
   transition: background 0.15s;
 }
@@ -313,22 +368,20 @@ body, html {
   height: 2px;
 }
 
-/* Agent Header Wrapper (2-row) */
+/* Agent Header Wrapper (Figma 2086:9398 session-header) */
 .agent-header-wrapper {
   display: flex;
   flex-direction: column;
-  background: rgba(14, 19, 28, 0.98);
-  border-bottom: 1px solid var(--border-card);
+  background: rgba(6, 12, 19, 0.94);
+  border-bottom: 1px solid rgba(0, 148, 217, 0.25);
 }
 
-/* Row 1 */
 .agent-top-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 10px;
+  padding: 4px 10px;
   height: 32px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .agent-title-group {
@@ -648,12 +701,12 @@ body, html {
 .bubble-agent {
   align-self: flex-start;
   max-width: 86%;
-  background: var(--bg-agent-bubble);
-  border: 1px solid var(--border-agent-bubble);
-  border-radius: 6px;
+  background: rgba(14, 25, 36, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
   padding: 8px 12px;
   color: #cbd5e1;
-  font-size: 12px;
+  font-size: 11.5px;
   line-height: 1.45;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   white-space: pre-wrap;
@@ -663,14 +716,14 @@ body, html {
   align-self: flex-end;
   max-width: 82%;
   margin-left: auto;
-  background: var(--bg-user-bubble);
-  border: 1px solid var(--border-user-bubble);
-  border-radius: 6px;
+  background: rgba(0, 148, 217, 0.08);
+  border: 1px solid rgba(0, 148, 217, 0.35);
+  border-radius: 4px;
   padding: 8px 12px;
   color: #f0f9ff;
-  font-size: 12px;
+  font-size: 11.5px;
   line-height: 1.45;
-  box-shadow: 0 0 10px rgba(2, 132, 199, 0.15);
+  box-shadow: 0 0 10px rgba(0, 148, 217, 0.12);
 }
 
 /* Collapsible Thinking Process */
@@ -759,11 +812,16 @@ body, html {
   justify-content: flex-end;
   gap: 6px;
   margin-top: 4px;
-  font-size: 10px;
+  font-size: 9px;
   color: #64748b;
 }
 
-.copy-btn {
+.bubble-tokens, .bubble-latency {
+  color: #64748b;
+  font-size: 9px;
+}
+
+.copy-btn, .retry-btn {
   background: transparent;
   border: none;
   color: #64748b;
@@ -772,113 +830,113 @@ body, html {
   border-radius: 3px;
   display: flex;
   align-items: center;
+  transition: color 0.15s ease;
 }
 
-.copy-btn:hover {
-  color: #f1f5f9;
+.copy-btn:hover, .retry-btn:hover {
+  color: #00f0ff;
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* Composer */
+/* Composer (Figma 2101:12865) */
 .agent-composer-container {
-  padding: 8px 12px 10px 12px;
-  background: rgba(14, 19, 28, 0.95);
-  border-top: 1px solid var(--border-card);
+  padding: 6px 12px 8px 12px;
+  background: rgba(6, 12, 19, 0.96);
+  border-top: 1px solid rgba(0, 148, 217, 0.25);
+  border-radius: 0 0 4px 4px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
-/* Project & Git & Worktree Sub-row (Figma 2101:12950) */
+/* Project & Git & Worktree Flat Sub-bar (Figma 2101:12950) */
 .project-and-git-and-worktree-info {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 3px 6px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-  font-size: 10px;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  padding: 0 0 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  font-size: 9.5px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
 .composer-git-left {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   overflow: hidden;
+  color: #64748b;
 }
 
-.composer-git-badge {
+.composer-folder-icon {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.composer-git-path-text {
+  color: #8da2b5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.composer-git-right {
   display: flex;
   align-items: center;
-  gap: 4px;
-  color: #94a3b8;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.project-badge {
-  color: #cbd5e1;
-}
-
-.branch-badge {
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.08);
-  padding: 1px 4px;
-  border-radius: 3px;
-}
-
-.composer-git-icon {
+  gap: 8px;
   flex-shrink: 0;
 }
 
 .composer-git-stats {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 5px;
   font-size: 9.5px;
   font-weight: 600;
 }
 
-.stats-clean {
+.stat-mod {
+  color: #94a3b8;
+}
+
+.stat-add {
   color: #10b981;
 }
 
-.stats-add {
-  color: #22c55e;
+.stat-untrack {
+  color: #f59e0b;
 }
 
-.stats-del {
-  color: #ef4444;
-}
-
-.composer-git-right {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
+.stat-div {
+  color: #0094d9;
 }
 
 .composer-fork-btn {
   display: flex;
   align-items: center;
   gap: 3px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
-  color: #94a3b8;
+  background: transparent;
+  border: none;
+  color: #0094d9;
   font-size: 9.5px;
   font-weight: 600;
-  padding: 2px 6px;
   cursor: pointer;
+  padding: 1px 4px;
+  border-radius: 3px;
   transition: all 0.15s ease;
 }
 
 .composer-fork-btn:hover {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: #38bdf8;
-  color: #38bdf8;
+  background: rgba(0, 148, 217, 0.15);
+  color: #00f0ff;
+}
+
+.fork-icon-cyan {
+  color: #0094d9;
+}
+
+.composer-fork-btn:hover .fork-icon-cyan {
+  color: #00f0ff;
 }
 
 .composer-input-row {
@@ -889,12 +947,12 @@ body, html {
   width: 100%;
   background: transparent;
   border: none;
-  color: var(--text-main);
-  font-size: 12.5px;
+  color: #e2e8f0;
+  font-size: 12px;
   outline: none;
   font-family: inherit;
   resize: none;
-  height: 24px;
+  height: 22px;
 }
 
 .composer-textarea::placeholder {
@@ -905,14 +963,28 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 4px;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 2px;
 }
 
 .composer-controls-left {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.btn-add-context-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: #0094d9;
+}
+
+.btn-add-context-circle:hover {
+  color: #00f0ff;
 }
 
 .dropdown-pill-wrapper {
@@ -922,20 +994,54 @@ body, html {
 .control-pill {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   padding: 3px 8px;
-  background: var(--bg-pill);
-  border: 1px solid var(--border-pill);
-  border-radius: 5px;
-  color: #94a3b8;
-  font-size: 11px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  color: #cbd5e1;
+  font-size: 10.5px;
   cursor: pointer;
   user-select: none;
+  position: relative;
 }
 
 .control-pill:hover {
-  border-color: #38bdf8;
-  color: #f1f5f9;
+  border-color: rgba(0, 148, 217, 0.5);
+  color: #00f0ff;
+}
+
+.control-pill.with-rainbow {
+  padding-bottom: 5px;
+}
+
+.model-rainbow-bar {
+  position: absolute;
+  bottom: 0;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, #10b981 0%, #0094d9 35%, #00f0ff 65%, #f59e0b 85%, #ef4444 100%);
+}
+
+.send-circle-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #0094d9;
+  border: 1px solid #00f0ff;
+  color: #080c10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.send-circle-btn:hover {
+  background: #00f0ff;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
 }
 
 .pill-dropdown-menu {
