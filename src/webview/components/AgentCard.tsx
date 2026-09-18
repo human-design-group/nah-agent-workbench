@@ -64,6 +64,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         onSendMessage={onSendMessage}
         onSelectModel={onSelectModel}
         onSelectPermissions={onSelectPermissions}
+        onFork={onFork}
       />
       <AgentDrawer
         agent={agent}

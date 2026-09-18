@@ -175,39 +175,6 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Row 2: Workspace Context + Full Worktree + Git Status + Fork */}
-      <div className="agent-context-bar">
-        <div className="context-left">
-          <div className="context-item" title={`Workspace: ${agent.gitStatus.workspace}`}>
-            <Folder size={11} style={{ opacity: 0.8 }} />
-            <span className="context-text">{agent.gitStatus.workspace}</span>
-          </div>
-
-          <div className="context-item worktree-item" title={`Full Worktree: ${agent.gitStatus.worktree}`}>
-            <GitBranch size={11} style={{ opacity: 0.8 }} />
-            <span className="context-text worktree-text">{agent.gitStatus.worktree}</span>
-          </div>
-
-          {/* Git Stats (Adaptive display) */}
-          <div
-            className="git-stats"
-            title={`Modified: ${agent.gitStatus.modified} | Staged: ${agent.gitStatus.staged} | Untracked: ${agent.gitStatus.untracked} | Divergence: ${agent.gitStatus.divergence}`}
-          >
-            <span className="stat-modified">*{agent.gitStatus.modified}</span>
-            <span className="stat-staged">+{agent.gitStatus.staged}</span>
-            <span className="stat-untracked">!{agent.gitStatus.untracked}</span>
-            <span className="stat-divergence">?{agent.gitStatus.divergence}</span>
-          </div>
-        </div>
-
-        <div className="context-right">
-          <button className="fork-btn" onClick={onFork} title="Fork active branch / session">
-            <GitBranch size={10} />
-            <span>Fork</span>
-          </button>
-        </div>
-      </div>
     </header>
   );
 };

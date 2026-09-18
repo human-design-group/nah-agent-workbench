@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AgentConfig } from '../types/workbench';
-import { Plus, ChevronDown, ChevronRight, Circle, ArrowUp, Mic, Check, Copy, Terminal, Cpu } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Circle, ArrowUp, Mic, Check, Copy, Terminal, Cpu, FolderGit2, GitBranch, GitFork } from 'lucide-react';
 import { AddContextMenu } from './AddContextMenu';
 import { useClickOutside } from '../hooks/useClickOutside';
 
@@ -9,6 +9,15 @@ interface AgentChatViewProps {
   onSendMessage: (text: string, attachments?: any[]) => void;
   onSelectModel: (model: string) => void;
   onSelectPermissions: (mode: string) => void;
+  onFork?: () => void;
+  gitStatus?: {
+    branch?: string;
+    worktree?: string;
+    project?: string;
+    additions?: number;
+    deletions?: number;
+    isClean?: boolean;
+  };
 }
 
 export const AgentChatView: React.FC<AgentChatViewProps> = ({
@@ -16,6 +25,8 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
   onSendMessage,
   onSelectModel,
   onSelectPermissions,
+  onFork,
+  gitStatus,
 }) => {
   const [inputText, setInputText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -156,8 +167,44 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Composer Input Block */}
+      {/* Composer Input Block (Figma 2101:12865) */}
       <form className="agent-composer-container" onSubmit={handleSubmit}>
+        {/* Project & Git & Worktree Sub-bar (Figma 2101:12950) */}
+        <div className="project-and-git-and-worktree-info">
+          <div className="composer-git-left">
+            <div className="composer-git-badge project-badge">
+              <FolderGit2 size={11} className="composer-git-icon" />
+              <span>{gitStatus?.project || 'hdg-projects/Agent Workbench'}</span>
+            </div>
+            <div className="composer-git-badge branch-badge">
+              <GitBranch size={10} className="composer-git-icon" />
+              <span>{gitStatus?.branch || 'main'}</span>
+            </div>
+            <div className="composer-git-stats">
+              {gitStatus?.isClean !== false ? (
+                <span className="stats-clean">Clean</span>
+              ) : (
+                <>
+                  <span className="stats-add">+{gitStatus?.additions ?? 14}</span>
+                  <span className="stats-del">-{gitStatus?.deletions ?? 3}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="composer-git-right">
+            <button
+              type="button"
+              className="composer-fork-btn"
+              onClick={onFork}
+              title="Fork Session / Branch Worktree"
+            >
+              <GitFork size={10} />
+              <span>Fork</span>
+            </button>
+          </div>
+        </div>
+
         <div className="composer-input-row">
           <input
             type="text"
