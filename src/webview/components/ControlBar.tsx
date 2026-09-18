@@ -16,7 +16,7 @@ import {
   Settings
 } from 'lucide-react';
 import { AgentoLogo } from './AgentoLogo';
-import { SessionModeModal } from './SessionModeModal';
+import { SessionProjectConfigModal } from './SessionProjectConfigModal';
 import { ExtensionMoreMenu } from './ExtensionMoreMenu';
 import { useClickOutside } from '../hooks/useClickOutside';
 
@@ -233,14 +233,18 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         </div>
       </header>
 
-      {/* Session Mode Modal */}
-      <SessionModeModal
+      {/* In-Extension Session & Project Switcher Modal (Figma Concept 2) */}
+      <SessionProjectConfigModal
         isOpen={isSessionModalOpen}
         onClose={() => setIsSessionModalOpen(false)}
         currentMode={sessionMode}
         currentTeamConfig={teamConfig}
         availableAgents={availableAgents}
-        onApplyMode={onApplySessionMode}
+        currentSlots={currentSlotKeys}
+        onApplyConfig={(mode, slots, projectFolder) => {
+          onApplySessionMode(mode, teamConfig);
+          setIsSessionModalOpen(false);
+        }}
       />
     </>
   );

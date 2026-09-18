@@ -102,7 +102,7 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
           </div>
         </div>
 
-        {/* Center: Session Pill (Full width / adaptive) */}
+        {/* Center: Session Pill + Live Context Meter */}
         <div className="header-center-controls" ref={sessionMenuRef}>
           <div
             className="session-pill-dropdown"
@@ -112,6 +112,25 @@ export const AgentHeader: React.FC<AgentHeaderProps> = ({
             <span className="session-pill-text">{agent.sessionName}</span>
             <ChevronDown size={11} className="text-muted flex-shrink-0" />
           </div>
+
+          {/* Live Linear Context Meter (Figma 2096:12051) */}
+          {(() => {
+            const totalTokens = agent.messages.reduce((acc, m) => acc + (m.tokens || 0), 0) || 1280;
+            const maxContextTokens = 200000;
+            const percent = Math.min(100, Math.max(3, Math.round((totalTokens / maxContextTokens) * 100)));
+            const meterClass = percent > 85 ? 'danger' : percent > 60 ? 'warning' : 'normal';
+            return (
+              <div
+                className="context-meter-container"
+                title={`Live Token Context: ${totalTokens.toLocaleString()} / ${maxContextTokens.toLocaleString()} tokens (${percent}%)`}
+              >
+                <div className="context-meter-track">
+                  <div className={`context-meter-fill ${meterClass}`} style={{ width: `${percent}%` }} />
+                </div>
+                <span className="context-meter-label">{percent}%</span>
+              </div>
+            );
+          })()}
 
           {showSessionMenu && (
             <div className="session-dropdown-menu">
