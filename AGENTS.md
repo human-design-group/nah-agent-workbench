@@ -1,13 +1,13 @@
----
+-
 type: agent-instructions
 scope: project
 project: Agent Workbench
 slug: nah-agent-workbench
 org: human-design-group
 brand: human design group
-applies_to: [astro, humano, uno, omo, etho, ordo, servo, vero, codo]
+applies_to: [astro, humano, uno, omo, , , , , ]
 runtime: [antigravity, claude, hermes, openclaw, opencode, codex]
----
+-
 
 # Agent Ground-Truth — Agent Workbench
 

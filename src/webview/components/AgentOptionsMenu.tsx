@@ -1,5 +1,11 @@
-import React from 'react';
-import { Search, Share2, Copy, Trash2, XCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  IconSearch,
+  IconFileCopy,
+  IconGlobalLine,
+  IconFileCopy1,
+  IconCloseCircle,
+} from './FigmaIcons';
 
 interface AgentOptionsMenuProps {
   isOpen: boolean;
@@ -24,30 +30,32 @@ export const AgentOptionsMenu: React.FC<AgentOptionsMenuProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const handleCopy = (key: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 1500);
+  };
+
   return (
     <>
       <div className="menu-backdrop" onClick={onClose} />
-      <div className="agent-options-menu" onClick={e => e.stopPropagation()}>
+      <div
+        className="agent-options-menu figma-styled-menu"
+        onClick={(e) => e.stopPropagation()}
+        data-name="Agent-Session-Additional-Settings"
+      >
         <button
           className="menu-item"
           onClick={() => {
             onFindInSession(agentId);
             onClose();
           }}
+          data-name="Find-in-Session"
         >
-          <Search size={14} className="menu-icon" />
+          <IconSearch size={14} color="#F5FCFF" className="menu-icon" />
           <span>Find in Session</span>
-        </button>
-
-        <button
-          className="menu-item"
-          onClick={() => {
-            onExportSession(agentId);
-            onClose();
-          }}
-        >
-          <Share2 size={14} className="menu-icon" />
-          <span>Export Session</span>
         </button>
 
         <button
@@ -56,33 +64,45 @@ export const AgentOptionsMenu: React.FC<AgentOptionsMenuProps> = ({
             onDuplicateSession(agentId);
             onClose();
           }}
+          data-name="Duplicate-Session"
         >
-          <Copy size={14} className="menu-icon" />
+          <IconFileCopy size={14} color="#F5FCFF" className="menu-icon" />
           <span>Duplicate Session</span>
         </button>
 
         <button
           className="menu-item"
           onClick={() => {
-            onClearSession(agentId);
-            onClose();
+            handleCopy('url', window.location.href);
+          }}
+          data-name="Copy-Current-Session-URL"
+        >
+          <IconGlobalLine size={14} color="#F5FCFF" className="menu-icon" />
+          <span>{copiedKey === 'url' ? 'URL Copied!' : 'Copy Session URL'}</span>
+        </button>
+
+        <button
+          className="menu-item"
+          onClick={() => {
+            handleCopy('name', `Session-${agentId}`);
           }}
         >
-          <Trash2 size={14} className="menu-icon" />
-          <span>Clear History</span>
+          <IconFileCopy1 size={14} color="#F5FCFF" className="menu-icon" />
+          <span>{copiedKey === 'name' ? 'Name Copied!' : 'Copy Session Name & ID'}</span>
         </button>
 
         <div className="menu-divider" />
 
         <button
-          className="menu-item text-danger"
+          className="menu-item-destructive-text"
           onClick={() => {
             onClosePanel(agentId);
             onClose();
           }}
+          data-name="Close-Agent-Session"
         >
-          <XCircle size={14} className="menu-icon" />
-          <span>Close Agent Panel</span>
+          <IconCloseCircle size={14} color="#D96B00" />
+          <span>Close Agent Session</span>
         </button>
       </div>
     </>

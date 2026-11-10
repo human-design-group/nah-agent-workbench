@@ -11,12 +11,12 @@ export function useClickOutside(ref: RefObject<HTMLElement | null>, handler: () 
       handler();
     };
 
-    document.addEventListener('mousedown', listener, true);
-    document.addEventListener('touchstart', listener, true);
+    document.addEventListener('mousedown', listener, false);
+    document.addEventListener('touchstart', listener, false);
 
     return () => {
-      document.removeEventListener('mousedown', listener, true);
-      document.removeEventListener('touchstart', listener, true);
+      document.removeEventListener('mousedown', listener, false);
+      document.removeEventListener('touchstart', listener, false);
     };
   }, [ref, handler, enabled]);
 }

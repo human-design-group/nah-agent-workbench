@@ -27,18 +27,12 @@ interface SessionProjectConfigModalProps {
 }
 
 const AVAILABLE_AGENTS_LIST = [
-  { key: 'antigravity', name: 'AntiGravity', runtime: 'Google' },
-  { key: 'claude', name: 'Claude Code', runtime: 'Anthropic' },
-  { key: 'codex', name: 'Codex CLI', runtime: 'OpenAI' },
-  { key: 'cline', name: 'Cline', runtime: 'Autonomous' },
-  { key: 'cursor', name: 'Cursor Agent', runtime: 'IDE' },
-  { key: 'gemini', name: 'Gemini CLI', runtime: 'Google' },
-  { key: 'hermes', name: 'Hermes Agent', runtime: 'Hermes' },
-  { key: 'kilo', name: 'Kilo Code', runtime: 'Kilo' },
-  { key: 'openclaw', name: 'OpenClaw', runtime: 'ACP' },
-  { key: 'opencode', name: 'OpenCode', runtime: 'SST' },
-  { key: 'ollama', name: 'Ollama Local', runtime: 'Local' },
-  { key: 'humano', name: 'Humano', runtime: 'Custom' },
+  { key: 'uno', name: 'Uno', runtime: 'Hermes CoS' },
+  { key: 'omo', name: 'Omo', runtime: 'Hermes Lead Dev' },
+  { key: 'gravito', name: 'Gravito', runtime: 'Antigravity AI Eng' },
+  { key: 'humano', name: 'Humano', runtime: 'Hermes Design' },
+  { key: 'curso', name: 'Curso', runtime: 'Cursor IDE' },
+  { key: 'astro', name: 'Astro', runtime: 'Hermes Architect' },
 ];
 
 const SAMPLE_PROJECTS = [
@@ -79,10 +73,17 @@ export const SessionProjectConfigModal: React.FC<SessionProjectConfigModalProps>
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedMode, setSelectedMode] = useState<SessionMode>(currentMode || 'independent');
   const [selectedSlots, setSelectedSlots] = useState<string[]>(
-    currentSlots && currentSlots.length > 0 ? currentSlots : ['humano', 'uno', 'omo', 'astro']
+    currentSlots && currentSlots.length > 0 ? currentSlots : ['uno', 'omo', 'gravito', 'humano']
   );
   const [selectedProject, setSelectedProject] = useState<string>(SAMPLE_PROJECTS[0].path);
   const [isTreeExpanded, setIsTreeExpanded] = useState<boolean>(true);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setSelectedSlots(currentSlots && currentSlots.length > 0 ? currentSlots : ['uno', 'omo', 'gravito', 'humano']);
+      setSelectedMode(currentMode || 'independent');
+    }
+  }, [isOpen, currentSlots, currentMode]);
 
   const toggleSlot = (key: string) => {
     if (selectedSlots.includes(key)) {

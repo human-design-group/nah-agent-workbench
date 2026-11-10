@@ -113,7 +113,33 @@ export type WebviewToHostMessage =
   | { type: 'FIND_IN_SESSION'; payload: { agentId?: string } }
   | { type: 'CLOSE_AGENT_PANEL'; payload: { agentId: string } }
   | { type: 'COPY_REMOTE_URL'; payload: { target: 'session' | 'workspace' | 'shareCode'; agentId?: string } }
+  | { type: 'TEST_PROVIDER_CONNECTION'; payload: ProviderConfig }
+  | { type: 'SAVE_PROVIDER_CONFIG'; payload: ProviderConfig }
   | { type: 'RELOAD_WORKBENCH' };
+
+export type ProviderType =
+  | 'omniroute'
+  | 'openrouter'
+  | 'openai'
+  | 'anthropic'
+  | 'gemini'
+  | 'ollama'
+  | 'lmstudio'
+  | 'custom';
+
+export interface ProviderConfig {
+  type: ProviderType;
+  baseUrl?: string;
+  apiKey?: string;
+  defaultModel?: string;
+}
+
+export interface ProviderTestResult {
+  ok: boolean;
+  message: string;
+  latencyMs: number;
+  models?: string[];
+}
 
 export interface DiagnosticCheckResult {
   omniRoute: { ok: boolean; statusText: string; latencyMs?: number };
@@ -130,6 +156,11 @@ export type HostToWebviewMessage =
   | { type: 'OPEN_WALKTHROUGH' }
   | { type: 'AGENT_STATUS_UPDATE'; payload: { agentId: string; status: AgentStatus } }
   | { type: 'AGENT_MESSAGE_RECEIVED'; payload: { agentId: string; message: AgentChatMessage } }
+  | { type: 'AVAILABLE_MODELS_UPDATE'; payload: { models: string[]; combos: string[] } }
+  | { type: 'AVAILABLE_AGENTS_UPDATE'; payload: { agents: { key: string; name: string; runtime: string; role: string; detected: boolean; defaultModel: string }[] } }
+  | { type: 'PROVIDER_TEST_RESULT'; payload: ProviderTestResult }
+  | { type: 'PROVIDER_CONFIG_UPDATE'; payload: ProviderConfig }
+  | { type: 'SYSTEM_SCAN_RESULT'; payload: any }
   | { type: 'RESET_LAYOUT' }
   | { type: 'REMOTE_INFO_UPDATE'; payload: RemoteShareInfo };
 

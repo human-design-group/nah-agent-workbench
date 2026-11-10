@@ -22,10 +22,13 @@ import {
   Zap,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  Key,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { AgentoSettings, DEFAULT_SETTINGS } from '../types/settings';
-import { AgentConfig, DiagnosticCheckResult, LayoutMode, SessionMode } from '../types/workbench';
+import { AgentConfig, DiagnosticCheckResult, LayoutMode, SessionMode, ProviderConfig, ProviderTestResult, ProviderType } from '../types/workbench';
 import { AgentoLogo } from './AgentoLogo';
 
 interface SettingsModalProps {
@@ -37,6 +40,11 @@ interface SettingsModalProps {
   availableAgents: AgentConfig[];
   diagnosticResults?: DiagnosticCheckResult;
   onRunDiagnostics?: () => void;
+  providerConfig?: ProviderConfig;
+  providerTestResult?: ProviderTestResult | null;
+  isTestingProvider?: boolean;
+  onTestProvider?: (config: ProviderConfig) => void;
+  onSaveProvider?: (config: ProviderConfig) => void;
 }
 
 type SettingsTab = 'general' | 'agents' | 'team' | 'gateway' | 'git' | 'security' | 'diagnostics';
@@ -50,6 +58,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   availableAgents,
   diagnosticResults,
   onRunDiagnostics,
+  providerConfig,
+  providerTestResult,
+  isTestingProvider = false,
+  onTestProvider,
+  onSaveProvider,
 }) => {
   if (!isOpen) return null;
 
@@ -58,6 +71,41 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [formData, setFormData] = useState<AgentoSettings>(JSON.parse(JSON.stringify(currentSettings || DEFAULT_SETTINGS)));
   const [showSecretToken, setShowSecretToken] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
+
+  // Provider configuration state
+  const [providerType, setProviderType] = useState<ProviderType>(providerConfig?.type || 'openrouter');
+  const [providerBaseUrl, setProviderBaseUrl] = useState<string>(
+    providerConfig?.baseUrl || 'https://openrouter.ai/api/v1'
+  );
+  const [providerApiKey, setProviderApiKey] = useState<string>(providerConfig?.apiKey || '');
+  const [showProviderKey, setShowProviderKey] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (providerConfig) {
+      if (providerConfig.type) setProviderType(providerConfig.type);
+      if (providerConfig.baseUrl) setProviderBaseUrl(providerConfig.baseUrl);
+      if (providerConfig.apiKey !== undefined) setProviderApiKey(providerConfig.apiKey);
+    }
+  }, [providerConfig]);
+
+  const selectProviderPreset = (type: ProviderType) => {
+    setProviderType(type);
+    if (type === 'openrouter') {
+      setProviderBaseUrl('https://openrouter.ai/api/v1');
+    } else if (type === 'anthropic') {
+      setProviderBaseUrl('https://api.anthropic.com');
+    } else if (type === 'openai') {
+      setProviderBaseUrl('https://api.openai.com/v1');
+    } else if (type === 'gemini') {
+      setProviderBaseUrl('https://generativelanguage.googleapis.com');
+    } else if (type === 'ollama') {
+      setProviderBaseUrl('http://127.0.0.1:11434');
+    } else if (type === 'lmstudio') {
+      setProviderBaseUrl('http://127.0.0.1:1234');
+    } else if (type === 'omniroute') {
+      setProviderBaseUrl('http://localhost:20128');
+    }
+  };
 
   // Tab definitions
   const tabs = [
@@ -72,6 +120,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleSave = () => {
     onSaveSettings(formData);
+    if (onSaveProvider) {
+      onSaveProvider({
+        type: providerType,
+        baseUrl: providerBaseUrl,
+        apiKey: providerApiKey,
+      });
+    }
     setSavedToast(true);
     setTimeout(() => {
       setSavedToast(false);
@@ -501,7 +556,146 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {/* TAB: GATEWAYS & BRIDGES */}
             {activeTab === 'gateway' && (
               <div className="settings-section">
-                <h3 className="section-title">Gateways & Bridges</h3>
+                <h3 className="section-title">Model Provider & API Credentials</h3>
+                <p className="section-desc">
+                  Configure direct cloud API access (OpenRouter, Anthropic, OpenAI, Gemini) or offline local models (Ollama, LM Studio). Stored securely via VS Code SecretStorage.
+                </p>
+
+                {/* Provider Preset Buttons */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+                  {[
+                    { id: 'openrouter', label: 'OpenRouter (Recommended)', note: 'All Models (Claude, GPT, Gemini, Llama)' },
+                    { id: 'anthropic', label: 'Anthropic Direct', note: 'Claude 3.7 / 3.5 Sonnet' },
+                    { id: 'openai', label: 'OpenAI Direct', note: 'GPT-4o, o3-mini' },
+                    { id: 'gemini', label: 'Google Gemini', note: 'Gemini 2.5 Flash / Pro' },
+                    { id: 'ollama', label: 'Ollama Local (Free)', note: 'Offline localhost:11434' },
+                    { id: 'omniroute', label: 'OmniRoute Gateway', note: 'Localhost:20128 Proxy' },
+                    { id: 'custom', label: 'Custom Endpoint', note: 'Any OpenAI-Compatible URL' },
+                  ].map((p) => {
+                    const isSelected = providerType === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => selectProviderPreset(p.id as ProviderType)}
+                        style={{
+                          flex: '1 1 calc(33.333% - 8px)',
+                          minWidth: '150px',
+                          textAlign: 'left',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: isSelected ? '1px solid #00D2FF' : '1px solid #243547',
+                          background: isSelected ? 'rgba(0, 210, 255, 0.12)' : 'rgba(10, 20, 28, 0.6)',
+                          color: isSelected ? '#F5FCFF' : '#94A3B8',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', fontWeight: 600 }}>
+                          <span>{p.label}</span>
+                          {isSelected && <span style={{ color: '#00D2FF' }}>✓</span>}
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#64748B', marginTop: '2px' }}>{p.note}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="setting-group">
+                  <label className="setting-label">API Endpoint URL</label>
+                  <span className="setting-help">Root URL for completions (OpenAI-compatible /v1/chat/completions or Anthropic /v1/messages).</span>
+                  <input
+                    type="text"
+                    value={providerBaseUrl}
+                    onChange={(e) => setProviderBaseUrl(e.target.value)}
+                    className="settings-input"
+                    placeholder="e.g. https://openrouter.ai/api/v1"
+                  />
+                </div>
+
+                {providerType !== 'ollama' && providerType !== 'lmstudio' && (
+                  <div className="setting-group">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label className="setting-label">Provider API Key</label>
+                      <span style={{ fontSize: '10px', color: '#64748B', fontFamily: 'monospace' }}>Encrypted in Keychain / SecretStorage</span>
+                    </div>
+                    <div className="password-input-wrap">
+                      <input
+                        type={showProviderKey ? 'text' : 'password'}
+                        value={providerApiKey}
+                        onChange={(e) => setProviderApiKey(e.target.value)}
+                        placeholder={
+                          providerType === 'openrouter'
+                            ? 'sk-or-v1-...'
+                            : providerType === 'anthropic'
+                            ? 'sk-ant-api03-...'
+                            : providerType === 'openai'
+                            ? 'sk-proj-...'
+                            : providerType === 'gemini'
+                            ? 'AIzaSy...'
+                            : 'API Key or bearer token'
+                        }
+                        className="settings-input"
+                      />
+                      <button
+                        type="button"
+                        className="btn-password-toggle"
+                        onClick={() => setShowProviderKey(!showProviderKey)}
+                        title={showProviderKey ? 'Hide Key' : 'Show Key'}
+                      >
+                        {showProviderKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Test Connection Button & Status */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(5, 12, 18, 0.6)', border: '1px solid #1E2D3D', borderRadius: '6px', marginBottom: '24px' }}>
+                  <button
+                    type="button"
+                    onClick={() => onTestProvider && onTestProvider({ type: providerType, baseUrl: providerBaseUrl, apiKey: providerApiKey })}
+                    disabled={isTestingProvider}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 14px',
+                      borderRadius: '4px',
+                      background: '#0094D9',
+                      color: '#FFF',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor: isTestingProvider ? 'not-allowed' : 'pointer',
+                      opacity: isTestingProvider ? 0.6 : 1,
+                    }}
+                  >
+                    <RefreshCw size={13} className={isTestingProvider ? 'animate-spin' : ''} />
+                    <span>{isTestingProvider ? 'Testing Connection...' : 'Test Connection'}</span>
+                  </button>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {providerTestResult ? (
+                      providerTestResult.ok ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#4ADE80', background: 'rgba(74, 222, 128, 0.1)', padding: '4px 10px', borderRadius: '4px', border: '1px solid rgba(74, 222, 128, 0.3)' }}>
+                          <CheckCircle2 size={13} />
+                          <span>Connected ({providerTestResult.latencyMs}ms{providerTestResult.models ? ` • ${providerTestResult.models.length} models` : ''})</span>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#F87171', background: 'rgba(248, 113, 113, 0.1)', padding: '4px 10px', borderRadius: '4px', border: '1px solid rgba(248, 113, 113, 0.3)' }}>
+                          <AlertCircle size={13} />
+                          <span>{providerTestResult.message}</span>
+                        </div>
+                      )
+                    ) : (
+                      <span style={{ fontSize: '11px', color: '#64748B' }}>Click Test Connection to verify reachability and latency</span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ height: '1px', background: '#1E2D3D', margin: '20px 0' }} />
+
+                <h3 className="section-title">Local Gateways & Companion Bridges</h3>
                 <p className="section-desc">Manage connections to OmniRoute, Remote Companion Bridge, and nah-bridge.</p>
 
                 <div className="setting-group">

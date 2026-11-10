@@ -8,14 +8,17 @@
 *.keystore
 secrets/
 # ---- build / deps ----
+06 Engineering/
 node_modules/
-dist/
+dist/*
+!dist/agento-0.1.0.vsix
 build/
 .next/
 .astro/
 .wrangler/
 out/
 # ---- per-project graph cache (keep graphify-out/ outputs; ignore caches) ----
+.open-design/
 .graphify_*
 # ---- os / editor / icloud ----
 .DS_Store

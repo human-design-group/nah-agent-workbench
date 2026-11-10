@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { Image, FileText, Wrench, Plug, Film, Globe, ChevronRight } from 'lucide-react';
+import {
+  IconImageEdit,
+  IconFile,
+  IconHammer,
+  IconPlug,
+  IconClapperboard,
+  IconGlobalLine,
+  IconArrowRightS,
+} from './FigmaIcons';
 
 interface AddContextMenuProps {
   isOpen: boolean;
@@ -20,21 +28,27 @@ export const AddContextMenu: React.FC<AddContextMenuProps> = ({
     { name: 'nah-figma', desc: 'Figma Token Sync & Bridge' },
     { name: 'nah-remember', desc: 'Long-term Memory' },
     { name: 'nah-knows', desc: 'Codebase Knowledge Base' },
-    { name: 'nah-bridge', desc: 'Ecosystem Bridge' },
+    { name: 'nah-garage-door', desc: 'SSoT Capability Broker' },
   ];
 
   const connectorsList = [
     { name: 'Brave Search', desc: 'Web Search API' },
     { name: 'GitHub MCP', desc: 'Repo & PR Management' },
-    { name: 'Postgres MCP', desc: 'Database Querying' },
-    { name: 'Linear MCP', desc: 'Issue Tracking' },
+    { name: 'Desktop Commander', desc: 'System Operations' },
+    { name: 'Playwright', desc: 'Browser Automation' },
   ];
 
   return (
     <>
       <div className="menu-backdrop" onClick={onClose} />
-      <div className="add-context-menu" onClick={e => e.stopPropagation()}>
-        <div className="add-context-header">Add Context</div>
+      <div
+        className="add-context-menu figma-styled-menu"
+        onClick={(e) => e.stopPropagation()}
+        data-name="add-prompt-context"
+      >
+        <div className="add-context-header" data-name="add-context-heading">
+          Add Context
+        </div>
 
         <button
           className="context-menu-item"
@@ -43,7 +57,7 @@ export const AddContextMenu: React.FC<AddContextMenuProps> = ({
             onClose();
           }}
         >
-          <Image size={13} className="menu-icon text-cyan" />
+          <IconImageEdit size={14} color="#F5FCFF" className="menu-icon" />
           <span>Media</span>
         </button>
 
@@ -54,7 +68,7 @@ export const AddContextMenu: React.FC<AddContextMenuProps> = ({
             onClose();
           }}
         >
-          <FileText size={13} className="menu-icon text-cyan" />
+          <IconFile size={14} color="#F5FCFF" className="menu-icon" />
           <span>File</span>
         </button>
 
@@ -63,17 +77,17 @@ export const AddContextMenu: React.FC<AddContextMenuProps> = ({
           onMouseEnter={() => setActiveSubmenu('skills')}
           onClick={() => setActiveSubmenu(activeSubmenu === 'skills' ? null : 'skills')}
         >
-          <Wrench size={13} className="menu-icon text-cyan" />
+          <IconHammer size={14} color="#F5FCFF" className="menu-icon" />
           <span>Skills</span>
-          <ChevronRight size={12} className="submenu-arrow" />
+          <IconArrowRightS size={12} color="#939698" className="submenu-arrow" />
 
           {activeSubmenu === 'skills' && (
             <div className="context-submenu">
-              {skillsList.map(skill => (
+              {skillsList.map((skill) => (
                 <button
                   key={skill.name}
                   className="submenu-item"
-                  onClick={e => {
+                  onClick={(e) => {
                     e.stopPropagation();
                     onSelectContext('skill', skill.name);
                     onClose();
@@ -92,17 +106,17 @@ export const AddContextMenu: React.FC<AddContextMenuProps> = ({
           onMouseEnter={() => setActiveSubmenu('connectors')}
           onClick={() => setActiveSubmenu(activeSubmenu === 'connectors' ? null : 'connectors')}
         >
-          <Plug size={13} className="menu-icon text-cyan" />
+          <IconPlug size={14} color="#F5FCFF" className="menu-icon" />
           <span>Connectors</span>
-          <ChevronRight size={12} className="submenu-arrow" />
+          <IconArrowRightS size={12} color="#939698" className="submenu-arrow" />
 
           {activeSubmenu === 'connectors' && (
             <div className="context-submenu">
-              {connectorsList.map(conn => (
+              {connectorsList.map((conn) => (
                 <button
                   key={conn.name}
                   className="submenu-item"
-                  onClick={e => {
+                  onClick={(e) => {
                     e.stopPropagation();
                     onSelectContext('connector', conn.name);
                     onClose();
@@ -123,7 +137,7 @@ export const AddContextMenu: React.FC<AddContextMenuProps> = ({
             onClose();
           }}
         >
-          <Film size={13} className="menu-icon text-cyan" />
+          <IconClapperboard size={14} color="#F5FCFF" className="menu-icon" />
           <span>Actions</span>
         </button>
 
@@ -134,7 +148,7 @@ export const AddContextMenu: React.FC<AddContextMenuProps> = ({
             onClose();
           }}
         >
-          <Globe size={13} className="menu-icon text-cyan" />
+          <IconGlobalLine size={14} color="#F5FCFF" className="menu-icon" />
           <span>Web Search</span>
         </button>
       </div>

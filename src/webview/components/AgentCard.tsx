@@ -7,6 +7,9 @@ import { AgentDrawer } from './AgentDrawer';
 interface AgentCardProps {
   agent: AgentConfig;
   allAgents: { key: string; name: string; runtime: string }[];
+  availableModels?: string[];
+  slotIndex?: number;
+  totalSlots?: number;
   isFocused?: boolean;
   onFocus?: () => void;
   onSwitchAgent?: (newAgentKey: string) => void;
@@ -20,11 +23,16 @@ interface AgentCardProps {
   onDuplicateSession?: (agentId: string) => void;
   onClearSession?: (agentId: string) => void;
   onClosePanel?: (agentId: string) => void;
+  onDragStart?: (slotIndex: number) => void;
+  onDragEnd?: () => void;
 }
 
 export const AgentCard: React.FC<AgentCardProps> = ({
   agent,
   allAgents,
+  availableModels,
+  slotIndex,
+  totalSlots,
   isFocused,
   onFocus,
   onSwitchAgent,
@@ -38,6 +46,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   onDuplicateSession,
   onClearSession,
   onClosePanel,
+  onDragStart,
+  onDragEnd,
 }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -49,6 +59,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({
       <AgentHeader
         agent={agent}
         allAgents={allAgents}
+        slotIndex={slotIndex}
+        totalSlots={totalSlots}
         onToggleDrawer={() => setDrawerOpen(true)}
         onSwitchAgent={onSwitchAgent}
         onFork={onFork}
@@ -58,9 +70,12 @@ export const AgentCard: React.FC<AgentCardProps> = ({
         onDuplicateSession={onDuplicateSession}
         onClearSession={onClearSession}
         onClosePanel={onClosePanel}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
       />
       <AgentChatView
         agent={agent}
+        availableModels={availableModels}
         onSendMessage={onSendMessage}
         onSelectModel={onSelectModel}
         onSelectPermissions={onSelectPermissions}

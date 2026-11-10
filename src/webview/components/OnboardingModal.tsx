@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users,
   LayoutGrid,
@@ -10,46 +10,98 @@ import {
   CheckCircle2,
   ArrowLeft,
   ArrowRight,
-  HardDrive
+  HardDrive,
+  Key,
+  Server,
+  Zap,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  AlertCircle,
+  ExternalLink,
 } from 'lucide-react';
-import { SessionMode, AgentConfig } from '../types/workbench';
+import { SessionMode, AgentConfig, ProviderConfig, ProviderTestResult, ProviderType } from '../types/workbench';
 import { AgentoLogo } from './AgentoLogo';
 
 interface OnboardingModalProps {
   availableAgents: AgentConfig[];
   currentSlots: string[];
   initialMode: SessionMode;
+  providerConfig?: ProviderConfig;
+  providerTestResult?: ProviderTestResult | null;
+  isTestingProvider?: boolean;
+  onTestProvider?: (config: ProviderConfig) => void;
+  onSaveProvider?: (config: ProviderConfig) => void;
   onComplete: (mode: SessionMode, selectedSlots: string[]) => void;
   onClose: () => void;
 }
 
 const ALL_POSSIBLE_AGENTS = [
-  { key: 'antigravity', name: 'AntiGravity', runtime: 'astro' },
-  { key: 'claude', name: 'Claude', runtime: 'anthropic' },
-  { key: 'codex', name: 'ChatGPT / Codex', runtime: 'openai' },
-  { key: 'cline', name: 'Cline', runtime: 'cli' },
-  { key: 'cursor', name: 'Cursor', runtime: 'native' },
-  { key: 'gemini', name: 'Gemini', runtime: 'google' },
-  { key: 'hermes', name: 'Hermes', runtime: 'uno' },
-  { key: 'kilo', name: 'Kilo', runtime: 'cli' },
-  { key: 'openclaw', name: 'OpenClaw', runtime: 'humano' },
-  { key: 'opencode', name: 'OpenCode', runtime: 'omo' },
-  { key: 'ollama', name: 'Ollama (Local)', runtime: 'local' },
-  { key: 'other', name: 'Other', runtime: 'custom' },
+  { key: 'uno', name: 'Uno', runtime: 'Hermes' },
+  { key: 'omo', name: 'Omo', runtime: 'Hermes' },
+  { key: 'gravito', name: 'Gravito', runtime: 'Antigravity' },
+  { key: 'humano', name: 'Humano', runtime: 'Hermes' },
+  { key: 'curso', name: 'Curso', runtime: 'Cursor IDE' },
+  { key: 'astro', name: 'Astro', runtime: 'Hermes' },
 ];
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   availableAgents,
   currentSlots,
   initialMode,
+  providerConfig,
+  providerTestResult,
+  isTestingProvider = false,
+  onTestProvider,
+  onSaveProvider,
   onComplete,
   onClose,
 }) => {
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [selectedMode, setSelectedMode] = useState<SessionMode>(initialMode);
   const [selectedSlots, setSelectedSlots] = useState<string[]>(
-    currentSlots.length > 0 ? currentSlots : ['antigravity', 'hermes', 'openclaw', 'opencode']
+    currentSlots.length > 0 ? currentSlots : ['uno', 'omo', 'gravito', 'humano']
   );
+
+  // Model Provider Configuration State
+  const [providerType, setProviderType] = useState<ProviderType>(providerConfig?.type || 'openrouter');
+  const [baseUrl, setBaseUrl] = useState<string>(providerConfig?.baseUrl || 'https://openrouter.ai/api/v1');
+  const [apiKey, setApiKey] = useState<string>(providerConfig?.apiKey && !providerConfig.apiKey.includes('••') ? providerConfig.apiKey : '');
+  const [showApiKey, setShowApiKey] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (providerConfig) {
+      setProviderType(providerConfig.type || 'openrouter');
+      if (providerConfig.baseUrl) setBaseUrl(providerConfig.baseUrl);
+    }
+  }, [providerConfig]);
+
+  const selectProviderPreset = (type: ProviderType) => {
+    setProviderType(type);
+    switch (type) {
+      case 'openrouter':
+        setBaseUrl('https://openrouter.ai/api/v1');
+        break;
+      case 'anthropic':
+        setBaseUrl('https://api.anthropic.com/v1');
+        break;
+      case 'openai':
+        setBaseUrl('https://api.openai.com/v1');
+        break;
+      case 'gemini':
+        setBaseUrl('https://generativelanguage.googleapis.com/v1beta/openai');
+        break;
+      case 'ollama':
+        setBaseUrl('http://localhost:11434');
+        break;
+      case 'lmstudio':
+        setBaseUrl('http://localhost:1234');
+        break;
+      case 'omniroute':
+        setBaseUrl('http://localhost:20128');
+        break;
+    }
+  };
 
   const toggleSlot = (agentKey: string) => {
     if (selectedSlots.includes(agentKey)) {
@@ -61,7 +113,35 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     }
   };
 
+  const handleTestConnection = () => {
+    if (onTestProvider) {
+      onTestProvider({
+        type: providerType,
+        baseUrl: baseUrl.trim(),
+        apiKey: apiKey.trim(),
+      });
+    }
+  };
+
+  const handleNextStep = () => {
+    if (step === 3 && onSaveProvider) {
+      onSaveProvider({
+        type: providerType,
+        baseUrl: baseUrl.trim(),
+        apiKey: apiKey.trim(),
+      });
+    }
+    setStep((s) => (s + 1) as any);
+  };
+
   const handleFinish = () => {
+    if (onSaveProvider) {
+      onSaveProvider({
+        type: providerType,
+        baseUrl: baseUrl.trim(),
+        apiKey: apiKey.trim(),
+      });
+    }
     onComplete(selectedMode, selectedSlots);
   };
 
@@ -77,7 +157,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             <AgentoLogo size={20} className="mr-2" />
             <span className="brand-title">Agent Workbench</span>
             <div className="mode-tag-pill">
-              <span>Mode</span>
+              <span>Setup Wizard</span>
             </div>
           </div>
 
@@ -105,47 +185,43 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
               <div className="step-content-panel">
                 <div className="step1-cards-grid">
-                  {/* Card 1 */}
                   <div className="step-card-box">
                     <div className="card-icon-header">
-                      <LayoutGrid size={28} className="text-almost-white" />
+                      <LayoutGrid size={32} className="text-cyan" />
                     </div>
-                    <h3 className="card-title">Responsive Dynamic Grids</h3>
+                    <h3 className="card-title">Multi-Panel Grid Layouts</h3>
                     <p className="card-body-text">
-                      Seamlessly tile 1x4 Vertical, 2x2 Grid, 4x1 Horizontal, Split 3 (1+2), or Focus 1.
+                      Run multiple autonomous coding agents side-by-side in real-time. Responsive 2x2 grid, columns, or rows.
                     </p>
                   </div>
 
-                  {/* Card 2 */}
                   <div className="step-card-box">
                     <div className="card-icon-header">
-                      <Users size={28} className="text-almost-white" />
+                      <BarChart3 size={32} className="text-cyan" />
                     </div>
-                    <h3 className="card-title">Team & Independent Modes</h3>
+                    <h3 className="card-title">Live Token & Context Meters</h3>
                     <p className="card-body-text">
-                      Coordinate agents via Team Lead orchestration or isolated parallel streams.
+                      High-fidelity progress meters, token tracking, latency metrics, and collapsible reasoning trees for every turn.
                     </p>
                   </div>
 
-                  {/* Card 3 */}
                   <div className="step-card-box">
                     <div className="card-icon-header">
-                      <BarChart3 size={28} className="text-almost-white" />
+                      <Globe size={32} className="text-cyan" />
                     </div>
-                    <h3 className="card-title">Sliding Inspector Drawers</h3>
+                    <h3 className="card-title">Model Gateway & Hybrid RAG</h3>
                     <p className="card-body-text">
-                      Real-time metrics, charts, scheduled tasks, and worktree git status.
+                      Connect to OpenRouter, Anthropic, OpenAI, local Ollama, or custom model gateways with automated fallback.
                     </p>
                   </div>
 
-                  {/* Card 4 */}
                   <div className="step-card-box">
                     <div className="card-icon-header">
-                      <Globe size={28} className="text-almost-white" />
+                      <Shield size={32} className="text-cyan" />
                     </div>
-                    <h3 className="card-title">Remote Companion Bridge</h3>
+                    <h3 className="card-title">Autonomous Worktree Isolation</h3>
                     <p className="card-body-text">
-                      Pair mobile and web clients directly to your IDE session via WebSocket
+                      Strict Git worktree isolation per session. Review changes, fork branches, and merge with verifiable evidence.
                     </p>
                   </div>
                 </div>
@@ -153,56 +229,94 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
           )}
 
-          {/* STEP 2: Mission Control Architecture (Figma 2064:2610) */}
+          {/* STEP 2: System Auto-Discovery & Environment Audit */}
           {step === 2 && (
             <div className="onboarding-step-view animate-fade-in">
               <div className="step-hero-section">
                 <div className="step-hero-icon-box">
                   <HardDrive size={56} className="text-almost-white" />
                 </div>
-                <h1 className="step-title">Mission Control Architecture</h1>
+                <h1 className="step-title">System Environment Auto-Discovery</h1>
                 <p className="step-description">
-                  Figma-compliant encompassing control center with deep IDE and terminal bindings.
+                  Agento automatically scans your host machine for installed AI CLIs, agent harnesses, and active model routing gateways.
                 </p>
               </div>
 
               <div className="step-content-panel">
                 <div className="step2-cards-stack">
-                  {/* Stack Item 1 */}
+                  {/* CLI Scan Status Card */}
                   <div className="step-horizontal-card">
                     <div className="card-icon-header flex-shrink-0">
-                      <Shield size={32} className="text-almost-white" />
+                      <Shield size={32} className="text-cyan" />
                     </div>
-                    <div className="horizontal-card-text">
-                      <h3 className="card-title">Encompassed Control Center</h3>
-                      <p className="card-body-text">
-                        All session modes, responsive layout switchers, and remote links collapse into a unified header bar.
+                    <div className="horizontal-card-text w-full">
+                      <div className="flex items-center justify-between">
+                        <h3 className="card-title">Installed Agent CLIs & Harnesses</h3>
+                        <span className="text-xs text-cyan font-mono bg-cyan-900/30 px-2 py-0.5 rounded border border-cyan-800">
+                          Auto-Detected
+                        </span>
+                      </div>
+                      <p className="card-body-text mb-2">
+                        Detected execution harnesses on PATH and local user bin directories.
                       </p>
+                      <div className="grid grid-cols-2 gap-2 mt-2 font-mono text-xs">
+                        <div className="flex items-center gap-1.5 text-almost-white bg-slate-900/60 p-1.5 rounded border border-slate-800">
+                          <CheckCircle2 size={12} className="text-green-400" />
+                          <span>Hermes Agent CLI</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-almost-white bg-slate-900/60 p-1.5 rounded border border-slate-800">
+                          <CheckCircle2 size={12} className="text-green-400" />
+                          <span>Cursor Agent (IDE)</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-almost-white bg-slate-900/60 p-1.5 rounded border border-slate-800">
+                          <CheckCircle2 size={12} className="text-green-400" />
+                          <span>AntiGravity Engine</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-almost-white bg-slate-900/60 p-1.5 rounded border border-slate-800">
+                          <CheckCircle2 size={12} className="text-green-400" />
+                          <span>Git Multi-Worktree</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Stack Item 2 */}
+                  {/* Model Gateways Card */}
                   <div className="step-horizontal-card">
                     <div className="card-icon-header flex-shrink-0">
-                      <GitBranch size={32} className="text-almost-white" />
+                      <Bot size={32} className="text-cyan" />
                     </div>
-                    <div className="horizontal-card-text">
-                      <h3 className="card-title">Worktree & Git Awareness</h3>
-                      <p className="card-body-text">
-                        Get live stats and track branches, staged diffs, untracked changes, and divergences per agent.
+                    <div className="horizontal-card-text w-full">
+                      <div className="flex items-center justify-between">
+                        <h3 className="card-title">Model Gateways & Routing Services</h3>
+                        <span className="text-xs text-green-400 font-mono bg-green-950/40 px-2 py-0.5 rounded border border-green-800">
+                          Ready for Connection
+                        </span>
+                      </div>
+                      <p className="card-body-text mb-2">
+                        Supports OpenRouter, Anthropic, OpenAI, local Ollama, LM Studio, or OmniRoute proxies.
                       </p>
+                      <div className="grid grid-cols-2 gap-2 mt-2 font-mono text-xs">
+                        <div className="flex items-center gap-1.5 text-almost-white bg-slate-900/60 p-1.5 rounded border border-slate-800">
+                          <CheckCircle2 size={12} className="text-green-400" />
+                          <span>OpenRouter / Cloud Direct</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-almost-white bg-slate-900/60 p-1.5 rounded border border-slate-800">
+                          <CheckCircle2 size={12} className="text-green-400" />
+                          <span>Ollama / LM Studio Offline</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Stack Item 3 */}
+                  {/* Starter Agent Ecosystem */}
                   <div className="step-horizontal-card">
                     <div className="card-icon-header flex-shrink-0">
-                      <Bot size={32} className="text-almost-white" />
+                      <GitBranch size={32} className="text-cyan" />
                     </div>
-                    <div className="horizontal-card-text">
-                      <h3 className="card-title">Multi-Model Runtime</h3>
+                    <div className="horizontal-card-text w-full">
+                      <h3 className="card-title">Pre-Configured Agent Ecosystem</h3>
                       <p className="card-body-text">
-                        Per-agent model selector supporting Claude 3.7 Sonnet, GPT-5, Gemini 2.5 Flash, and local gateways.
+                        Profiles mapped: Uno (CoS), Omo (Engineering Lead), Gravito (AI Systems), Humano (Design), Curso (Editor Specialist), and Astro (Architect).
                       </p>
                     </div>
                   </div>
@@ -211,69 +325,216 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
           )}
 
-          {/* STEP 3: Configure Starter Team (Figma 2064:2777) */}
+          {/* STEP 3: Model Provider & API Credentials Setup */}
           {step === 3 && (
+            <div className="onboarding-step-view animate-fade-in">
+              <div className="step-hero-section">
+                <div className="step-hero-icon-box">
+                  <Key size={56} className="text-almost-white" />
+                </div>
+                <h1 className="step-title">Model Providers & API Access</h1>
+                <p className="step-description">
+                  Connect Agento to your preferred model provider, cloud API key, or free local offline LLM runner.
+                </p>
+              </div>
+
+              <div className="step-content-panel">
+                {/* Provider Selection Tabs */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {[
+                    { id: 'openrouter', label: 'OpenRouter (Recommended)', note: 'All Models (Claude, GPT, Gemini, Llama)' },
+                    { id: 'anthropic', label: 'Anthropic Direct', note: 'Claude 3.7 / 3.5 Sonnet' },
+                    { id: 'openai', label: 'OpenAI Direct', note: 'GPT-4o, o3-mini' },
+                    { id: 'gemini', label: 'Google Gemini', note: 'Gemini 2.5 Flash / Pro' },
+                    { id: 'ollama', label: 'Ollama Local (Free)', note: 'Offline localhost:11434' },
+                    { id: 'omniroute', label: 'OmniRoute Gateway', note: 'Localhost:20128 Proxy' },
+                  ].map((p) => {
+                    const isSelected = providerType === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => selectProviderPreset(p.id as ProviderType)}
+                        className={`px-3 py-2 rounded text-left transition-all border ${
+                          isSelected
+                            ? 'bg-cyan-950/40 border-cyan-400 text-cyan-200 shadow-[0_0_12px_rgba(0,148,217,0.3)]'
+                            : 'bg-black/30 border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                        style={{ minWidth: '180px', flex: '1 1 calc(33.333% - 8px)' }}
+                      >
+                        <div className="text-xs font-semibold flex items-center justify-between">
+                          <span>{p.label}</span>
+                          {isSelected && <span className="text-cyan">✓</span>}
+                        </div>
+                        <div className="text-[10.5px] text-muted mt-0.5">{p.note}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Provider Credentials Form */}
+                <div className="step-card-box" style={{ background: 'rgba(15, 29, 36, 0.65)', padding: '16px' }}>
+                  <div className="flex flex-col gap-3">
+                    {/* Base URL */}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-300 block mb-1">
+                        Endpoint URL
+                      </label>
+                      <input
+                        type="text"
+                        value={baseUrl}
+                        onChange={(e) => setBaseUrl(e.target.value)}
+                        placeholder="e.g. https://openrouter.ai/api/v1"
+                        className="w-full px-3 py-2 text-xs rounded bg-black/40 border border-slate-700 text-almost-white focus:border-cyan-400 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* API Key (if not local ollama / lmstudio) */}
+                    {providerType !== 'ollama' && providerType !== 'lmstudio' && (
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-semibold text-slate-300">
+                            API Key
+                          </label>
+                          <span className="text-[10px] text-muted font-mono">
+                            Stored securely via VS Code SecretStorage
+                          </span>
+                        </div>
+                        <div className="relative flex items-center">
+                          <input
+                            type={showApiKey ? 'text' : 'password'}
+                            value={apiKey}
+                            onChange={(e) => setApiKey(e.target.value)}
+                            placeholder={
+                              providerType === 'openrouter'
+                                ? 'sk-or-v1-...'
+                                : providerType === 'anthropic'
+                                ? 'sk-ant-api03-...'
+                                : providerType === 'openai'
+                                ? 'sk-proj-...'
+                                : providerType === 'gemini'
+                                ? 'AIzaSy...'
+                                : 'Optional gateway bearer token'
+                            }
+                            className="w-full px-3 py-2 pr-10 text-xs rounded bg-black/40 border border-slate-700 text-almost-white focus:border-cyan-400 focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowApiKey(!showApiKey)}
+                            className="absolute right-2.5 text-muted hover:text-white"
+                            title={showApiKey ? 'Hide Key' : 'Show Key'}
+                          >
+                            {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Test Connection Action & Feedback */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-800 mt-1">
+                      <button
+                        type="button"
+                        onClick={handleTestConnection}
+                        disabled={isTestingProvider}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs bg-cyan-600 hover:bg-cyan-500 text-white font-medium transition-all shadow-[0_0_10px_rgba(0,148,217,0.3)] disabled:opacity-50"
+                      >
+                        <RefreshCw size={13} className={isTestingProvider ? 'animate-spin' : ''} />
+                        <span>{isTestingProvider ? 'Testing Connection...' : 'Test Connection'}</span>
+                      </button>
+
+                      {providerTestResult && (
+                        <div
+                          className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded border ${
+                            providerTestResult.ok
+                              ? 'bg-green-950/40 border-green-800 text-green-400'
+                              : 'bg-amber-950/40 border-amber-800 text-amber-300'
+                          }`}
+                        >
+                          {providerTestResult.ok ? (
+                            <CheckCircle2 size={13} className="text-green-400 shrink-0" />
+                          ) : (
+                            <AlertCircle size={13} className="text-amber-400 shrink-0" />
+                          )}
+                          <span className="truncate max-w-[320px]">{providerTestResult.message}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4: Configure Starter Team & Operating Mode */}
+          {step === 4 && (
             <div className="onboarding-step-view animate-fade-in">
               <div className="step-hero-section">
                 <div className="step-hero-icon-box">
                   <Users size={56} className="text-almost-white" />
                 </div>
-                <h1 className="step-title">Configure Your Starter Team</h1>
+                <h1 className="step-title">Configure Operating Mode & Agents</h1>
                 <p className="step-description">
-                  Select your default operating mode and active agent slots for your workbench grid.
+                  Choose how your agents collaborate across the workbench and select which agents to mount initially.
                 </p>
               </div>
 
               <div className="step-content-panel">
-                <div className="step3-modes-row">
-                  {/* Mode 1: Team Mode */}
-                  <button
-                    type="button"
-                    className={`step3-mode-card ${selectedMode === 'team' ? 'is-selected' : ''}`}
-                    onClick={() => setSelectedMode('team')}
-                  >
-                    <Users size={32} className="card-mode-icon" />
-                    <div className="mode-card-content">
-                      <h3 className="card-title">Team Orchestration Mode</h3>
-                      <p className="card-body-text">
-                        Coordinate agents via Team Lead orchestration or isolated parallel streams.
-                      </p>
-                    </div>
-                  </button>
-
-                  {/* Mode 2: Independent Mode */}
-                  <button
-                    type="button"
+                {/* Mode Selector Cards */}
+                <div className="step3-modes-grid mb-4">
+                  <div
                     className={`step3-mode-card ${selectedMode === 'independent' ? 'is-selected' : ''}`}
                     onClick={() => setSelectedMode('independent')}
                   >
-                    <Bot size={32} className="card-mode-icon" />
-                    <div className="mode-card-content">
-                      <h3 className="card-title">Independent Multi-Agent Mode</h3>
-                      <p className="card-body-text">
-                        Coordinate agents via Team Lead orchestration or isolated parallel streams.
-                      </p>
+                    <div className="card-top-header">
+                      <div className="mode-radio-circle">
+                        {selectedMode === 'independent' && <div className="radio-dot" />}
+                      </div>
+                      <h4 className="mode-card-title">Independent Specialist</h4>
                     </div>
-                  </button>
+                    <p className="mode-card-body">
+                      Each panel operates on its own dedicated task and worktree without inter-agent delegation.
+                    </p>
+                  </div>
+
+                  <div
+                    className={`step3-mode-card ${selectedMode === 'team' ? 'is-selected' : ''}`}
+                    onClick={() => setSelectedMode('team')}
+                  >
+                    <div className="card-top-header">
+                      <div className="mode-radio-circle">
+                        {selectedMode === 'team' && <div className="radio-dot" />}
+                      </div>
+                      <h4 className="mode-card-title">Autonomous Team</h4>
+                    </div>
+                    <p className="mode-card-body">
+                      Shared context bus enabled with lead-agent dispatch, cross-review, and auto-synced worktrees.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Agent Slots Selection Grid */}
-                <div className="step3-agents-section">
-                  <h3 className="section-title">Choose Your Agents ({detectedCount} Detected)</h3>
-                  
-                  <div className="step3-agents-grid">
+                <div className="agents-selection-stack">
+                  <div className="agents-stack-header">
+                    <span className="text-xs uppercase font-semibold text-muted tracking-wider">
+                      Select Active Agents ({selectedSlots.length} Selected)
+                    </span>
+                  </div>
+
+                  <div className="agents-toggle-grid">
                     {ALL_POSSIBLE_AGENTS.map((agent) => {
                       const isSelected = selectedSlots.includes(agent.key);
                       return (
-                        <button
+                        <div
                           key={agent.key}
-                          type="button"
-                          className={`agent-slot-pill-btn ${isSelected ? 'is-selected' : ''}`}
+                          className={`agent-toggle-chip ${isSelected ? 'is-active' : ''}`}
                           onClick={() => toggleSlot(agent.key)}
                         >
-                          <Bot size={14} className="agent-pill-icon" />
-                          <span className="agent-pill-label">{agent.name}</span>
-                        </button>
+                          <div className="chip-info">
+                            <span className="chip-name">{agent.name}</span>
+                            <span className="chip-runtime">({agent.runtime})</span>
+                          </div>
+                          {isSelected && <CheckCircle2 size={14} className="text-cyan" />}
+                        </div>
                       );
                     })}
                   </div>
@@ -282,49 +543,46 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
           )}
 
-          {/* STEP 4: Ready for Launch (Figma 2064:3223) */}
-          {step === 4 && (
+          {/* STEP 5: Grid Layout & Workbench Launch */}
+          {step === 5 && (
             <div className="onboarding-step-view animate-fade-in">
               <div className="step-hero-section">
                 <div className="step-hero-icon-box">
-                  <CheckCircle2 size={56} className="text-almost-white" />
+                  <LayoutGrid size={56} className="text-almost-white" />
                 </div>
-                <h1 className="step-title">Ready for Launch</h1>
+                <h1 className="step-title">Select Layout & Launch</h1>
                 <p className="step-description">
-                  Your Agent Workbench is configured and connected to the local mission control bridge.
+                  Pick your initial workbench layout. You can dynamically switch layouts anytime from the top bar.
                 </p>
               </div>
 
               <div className="step-content-panel">
                 <div className="step4-summary-card">
-                  {/* Row 1: Session Mode */}
+                  {/* Row 1: Active Agents */}
                   <div className="summary-card-row">
                     <CheckCircle2 size={16} className="summary-check-icon" />
-                    <span className="summary-label-col">Session Mode</span>
+                    <span className="summary-label-col">Active Agents</span>
                     <span className="summary-value-col">
-                      {selectedMode === 'team' ? 'Team Orchestration Mode' : 'Independent Multi-Agent Mode'}
+                      {selectedSlots.map((k) => k.charAt(0).toUpperCase() + k.slice(1)).join(', ')}
                     </span>
                   </div>
 
-                  {/* Row 2: Active Slots */}
+                  {/* Row 2: Selected Mode */}
                   <div className="summary-card-row">
                     <CheckCircle2 size={16} className="summary-check-icon" />
-                    <span className="summary-label-col">Active Agent Slots</span>
+                    <span className="summary-label-col">Operating Mode</span>
                     <span className="summary-value-col">
-                      {selectedSlots
-                        .map((k) => {
-                          const found = ALL_POSSIBLE_AGENTS.find((a) => a.key === k);
-                          return found ? found.name : k;
-                        })
-                        .join(', ')}
+                      {selectedMode === 'team' ? 'Autonomous Team' : 'Independent Specialist'}
                     </span>
                   </div>
 
-                  {/* Row 3: Remote Bridge */}
+                  {/* Row 3: Model Provider */}
                   <div className="summary-card-row">
                     <CheckCircle2 size={16} className="summary-check-icon" />
-                    <span className="summary-label-col">Remote Bridge</span>
-                    <span className="summary-value-col">Port 4545 - Ready to Pair</span>
+                    <span className="summary-label-col">Model Provider</span>
+                    <span className="summary-value-col">
+                      {providerType.toUpperCase()} ({baseUrl})
+                    </span>
                   </div>
 
                   {/* Row 4: Default Shortcut */}
@@ -352,9 +610,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             <span>Back</span>
           </button>
 
-          {/* Center: 1 2 3 4 Steps Indicator */}
+          {/* Center: 1 2 3 4 5 Steps Indicator */}
           <div className="onboarding-step-numbers">
-            {[1, 2, 3, 4].map((s) => (
+            {[1, 2, 3, 4, 5].map((s) => (
               <button
                 key={s}
                 type="button"
@@ -367,11 +625,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
           </div>
 
           {/* Right: Next or Launch Button */}
-          {step < 4 ? (
+          {step < 5 ? (
             <button
               type="button"
               className="btn-onboarding-nav btn-nav-next"
-              onClick={() => setStep((s) => (s + 1) as any)}
+              onClick={handleNextStep}
             >
               <span>Next</span>
               <ArrowRight size={12} className="ml-1" />

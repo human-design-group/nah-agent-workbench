@@ -9,6 +9,7 @@ interface GridContainerProps {
   layoutMode: LayoutMode;
   agents: AgentConfig[];
   slotKeys: string[];
+  availableModels?: string[];
   onSwitchSlot: (slotIndex: number, newAgentKey: string) => void;
   onSendMessage: (agentId: string, text: string, attachments?: any[]) => void;
   onSelectModel: (agentId: string, model: string) => void;
@@ -20,6 +21,8 @@ interface GridContainerProps {
   onDuplicateSession?: (agentId: string) => void;
   onClearSession?: (agentId: string) => void;
   onClosePanel?: (agentId: string) => void;
+  onCloseSlot?: (slotIndex: number) => void;
+  onReorderSlots?: (sourceIndex: number, targetIndex: number) => void;
   onAddAgentClick?: () => void;
 }
 
@@ -27,6 +30,7 @@ export const GridContainer: React.FC<GridContainerProps> = ({
   layoutMode,
   agents,
   slotKeys,
+  availableModels,
   onSwitchSlot,
   onSendMessage,
   onSelectModel,
@@ -38,9 +42,13 @@ export const GridContainer: React.FC<GridContainerProps> = ({
   onDuplicateSession,
   onClearSession,
   onClosePanel,
+  onCloseSlot,
+  onReorderSlots,
   onAddAgentClick,
 }) => {
   const [focusedSlot, setFocusedSlot] = useState<number>(0);
+  const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
+  const [dragSourceSlot, setDragSourceSlot] = useState<number | null>(null);
   const allAgentsList = agents.map((a) => ({ key: a.key, name: a.name, runtime: a.runtime }));
 
   const getAgentForSlot = (slotIdx: number): AgentConfig => {
@@ -51,25 +59,62 @@ export const GridContainer: React.FC<GridContainerProps> = ({
   const renderCard = (slotIdx: number) => {
     const agent = getAgentForSlot(slotIdx);
     if (!agent) return null;
+    const isDraggingThis = dragSourceSlot === slotIdx;
 
     return (
-      <AgentCard
-        agent={agent}
-        allAgents={allAgentsList}
-        isFocused={focusedSlot === slotIdx}
-        onFocus={() => setFocusedSlot(slotIdx)}
-        onSwitchAgent={(newKey) => onSwitchSlot(slotIdx, newKey)}
-        onSendMessage={(text, attachments) => onSendMessage(agent.id, text, attachments)}
-        onSelectModel={(model) => onSelectModel(agent.id, model)}
-        onSelectPermissions={(mode) => onSelectPermissions(agent.id, mode)}
-        onFork={() => onForkSession(agent.id)}
-        onNewSession={() => onNewSession(agent.id)}
-        onFindInSession={onFindInSession}
-        onExportSession={onExportSession}
-        onDuplicateSession={onDuplicateSession}
-        onClearSession={onClearSession}
-        onClosePanel={onClosePanel}
-      />
+      <div
+        data-panel-slot={slotIdx}
+        className={`panel-slot-container ${dragOverSlot === slotIdx ? 'panel-drag-over' : ''} ${isDraggingThis ? 'panel-is-dragging' : ''}`}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        }}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          setDragOverSlot(slotIdx);
+        }}
+        onDragLeave={(e) => {
+          if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+          setDragOverSlot(null);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOverSlot(null);
+          const srcIdxStr = e.dataTransfer.getData('text/plain');
+          const parsed = parseInt(srcIdxStr, 10);
+          const srcIdx = !isNaN(parsed) ? parsed : (dragSourceSlot !== null ? dragSourceSlot : -1);
+          setDragSourceSlot(null);
+          if (srcIdx >= 0 && srcIdx !== slotIdx && onReorderSlots) {
+            onReorderSlots(srcIdx, slotIdx);
+          }
+        }}
+        style={{ width: '100%', height: '100%', position: 'relative' }}
+      >
+        <AgentCard
+          agent={agent}
+          allAgents={allAgentsList}
+          availableModels={availableModels}
+          slotIndex={slotIdx}
+          totalSlots={slotKeys.length}
+          isFocused={focusedSlot === slotIdx}
+          onFocus={() => setFocusedSlot(slotIdx)}
+          onSwitchAgent={(newKey) => onSwitchSlot(slotIdx, newKey)}
+          onSendMessage={(text, attachments) => onSendMessage(agent.id, text, attachments)}
+          onSelectModel={(model) => onSelectModel(agent.id, model)}
+          onSelectPermissions={(mode) => onSelectPermissions(agent.id, mode)}
+          onFork={() => onForkSession(agent.id)}
+          onNewSession={() => onNewSession(agent.id)}
+          onFindInSession={onFindInSession}
+          onExportSession={onExportSession}
+          onDuplicateSession={onDuplicateSession}
+          onClearSession={onClearSession}
+          onClosePanel={() => (onCloseSlot ? onCloseSlot(slotIdx) : onClosePanel && onClosePanel(agent.id))}
+          onDragStart={(idx) => {
+            setTimeout(() => setDragSourceSlot(idx), 0);
+          }}
+          onDragEnd={() => setDragSourceSlot(null)}
+        />
+      </div>
     );
   };
 

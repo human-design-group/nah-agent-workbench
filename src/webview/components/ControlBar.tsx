@@ -1,21 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { LayoutMode, SessionMode, TeamConfig, RemoteShareInfo, AgentConfig } from '../types/workbench';
-import {
-  Sliders,
-  MoreVertical,
-  Plus,
-  Users,
-  LayoutGrid,
-  Columns,
-  Rows,
-  Split,
-  Maximize2,
-  RefreshCw,
-  ChevronDown,
-  Check,
-  Settings
-} from 'lucide-react';
 import { AgentoLogo } from './AgentoLogo';
+import {
+  IconAdd,
+  IconFocus2,
+  IconLayout,
+  IconSettings,
+  IconMore2,
+  IconArrowRightS,
+} from './FigmaIcons';
 import { SessionProjectConfigModal } from './SessionProjectConfigModal';
 import { ExtensionMoreMenu } from './ExtensionMoreMenu';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -25,7 +18,7 @@ interface ControlBarProps {
   onSelectLayout: (mode: LayoutMode) => void;
   sessionMode: SessionMode;
   teamConfig?: TeamConfig;
-  onApplySessionMode: (mode: SessionMode, config?: TeamConfig) => void;
+  onApplySessionMode: (mode: SessionMode, config?: TeamConfig, slots?: string[]) => void;
   availableAgents: AgentConfig[];
   currentSlotKeys: string[];
   remoteInfo?: RemoteShareInfo;
@@ -37,6 +30,7 @@ interface ControlBarProps {
   onDuplicateSession: () => void;
   onCopyRemoteUrl: (target: 'session' | 'workspace' | 'shareCode') => void;
   onAddAgent: (agentKey: string) => void;
+  onResetToFresh?: () => void;
 }
 
 export const ControlBar: React.FC<ControlBarProps> = ({
@@ -56,8 +50,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   onDuplicateSession,
   onCopyRemoteUrl,
   onAddAgent,
+  onResetToFresh,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isLayoutDropdownOpen, setIsLayoutDropdownOpen] = useState(false);
@@ -71,24 +65,26 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   useClickOutside(addAgentDropdownRef, () => setIsAddAgentDropdownOpen(false), isAddAgentDropdownOpen);
   useClickOutside(moreMenuRef, () => setIsMoreMenuOpen(false), isMoreMenuOpen);
 
-  const layouts: { id: LayoutMode; label: string; icon: React.ReactNode }[] = [
-    { id: 'grid', label: 'Grid (2x2)', icon: <LayoutGrid size={13} /> },
-    { id: 'vertical', label: 'Vertical (1x4)', icon: <Columns size={13} /> },
-    { id: 'horizontal', label: 'Horizontal (4x1)', icon: <Rows size={13} /> },
-    { id: 'split-3', label: 'Split 3 (1+2)', icon: <Split size={13} /> },
-    { id: 'focus', label: 'Focus (1)', icon: <Maximize2 size={13} /> },
+  const layouts: { id: LayoutMode; label: string }[] = [
+    { id: 'grid', label: 'Grid (2x2)' },
+    { id: 'vertical', label: 'Vertical (1x4)' },
+    { id: 'horizontal', label: 'Horizontal (4x1)' },
+    { id: 'split-3', label: 'Split 3 (1+2)' },
+    { id: 'focus', label: 'Focus (1)' },
   ];
 
   return (
     <>
-      <header className="main-top-header">
+      <header className="main-top-header" data-node-id="2090:11049" data-name="main-top-header">
         {/* Left: Agento Wordmark Logo (Figma 2090:10844) */}
-        <div className="header-left">
-          <AgentoLogo height={22} className="brand-wordmark-agento" />
+        <div className="header-left" data-name="main-heading-and-subtitle">
+          <div className="h-[24px] w-[81px] relative shrink-0">
+            <AgentoLogo height={24} width={81} className="brand-wordmark-agento" />
+          </div>
         </div>
 
         {/* Right: Discrete Action Buttons (Figma 2089:10028) */}
-        <div className="header-actions-right">
+        <div className="header-actions-right" data-name="main-heading-actions">
           {/* 1. Add Agent + */}
           <div className="relative" ref={addAgentDropdownRef}>
             <button
@@ -96,9 +92,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
               className="header-action-btn"
               onClick={() => setIsAddAgentDropdownOpen(!isAddAgentDropdownOpen)}
               title="Add Agent to Workbench"
+              data-name="add-agent"
             >
               <span>Add Agent</span>
-              <Plus size={13} className="header-action-icon" />
+              <IconAdd size={20} color="#F5FCFF" />
             </button>
 
             {isAddAgentDropdownOpen && (
@@ -119,7 +116,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                       <span className="text-muted" style={{ fontSize: '10px', marginLeft: 'auto' }}>
                         ({agent.runtime})
                       </span>
-                      {isOpen && <Check size={12} className="text-cyan ml-1" />}
+                      {isOpen && <span className="text-cyan ml-1">✓</span>}
                     </button>
                   );
                 })}
@@ -133,21 +130,23 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             className={`header-action-btn ${currentLayout === 'focus' ? 'active-action' : ''}`}
             onClick={() => onSelectLayout(currentLayout === 'focus' ? 'grid' : 'focus')}
             title="Toggle Single Agent Focus Mode"
+            data-name="focus-mode-button"
           >
             <span>Focus Mode</span>
-            <Maximize2 size={12} className="header-action-icon" />
+            <IconFocus2 size={20} color="#F5FCFF" />
           </button>
 
           {/* 3. Layout ☲ */}
           <div className="relative" ref={layoutDropdownRef}>
             <button
               type="button"
-              className="header-action-btn"
+              className={`header-action-btn ${isLayoutDropdownOpen ? 'active-action' : ''}`}
               onClick={() => setIsLayoutDropdownOpen(!isLayoutDropdownOpen)}
               title="Select Grid / Window Layout"
+              data-name="session-control-button"
             >
               <span>Layout</span>
-              <LayoutGrid size={12} className="header-action-icon" />
+              <IconLayout size={20} color="#F5FCFF" />
             </button>
 
             {isLayoutDropdownOpen && (
@@ -161,8 +160,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                       setIsLayoutDropdownOpen(false);
                     }}
                   >
-                    {l.icon}
                     <span>{l.label}</span>
+                    {currentLayout === l.id && <span className="text-cyan ml-1">✓</span>}
                   </button>
                 ))}
               </div>
@@ -175,10 +174,37 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             className="header-action-btn"
             onClick={() => setIsSessionModalOpen(true)}
             title="Session Control & Concept 2 Config"
+            data-name="workbench-settings"
           >
             <span>Session Control</span>
-            <Settings size={12} className="header-action-icon" />
+            <IconSettings size={20} color="#F5FCFF" />
           </button>
+
+          {/* 5. Extension More Options Button (...) */}
+          <div className="relative" ref={moreMenuRef}>
+            <button
+              type="button"
+              className={`header-action-btn icon-only-btn ${isMoreMenuOpen ? 'active-action' : ''}`}
+              onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+              title="Agento Workbench Options"
+              data-name="extension-more-options-button"
+            >
+              <IconMore2 size={20} color="#F5FCFF" />
+            </button>
+
+            <ExtensionMoreMenu
+              isOpen={isMoreMenuOpen}
+              onClose={() => setIsMoreMenuOpen(false)}
+              remoteInfo={remoteInfo}
+              onOpenSettings={onOpenSettings}
+              onOpenWalkthrough={onOpenWalkthrough}
+              onExportSession={onExportSession}
+              onFindInSession={onFindInSession}
+              onDuplicateSession={onDuplicateSession}
+              onCopyRemoteUrl={onCopyRemoteUrl}
+              onResetToFresh={onResetToFresh}
+            />
+          </div>
         </div>
       </header>
 
@@ -191,7 +217,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         availableAgents={availableAgents}
         currentSlots={currentSlotKeys}
         onApplyConfig={(mode, slots, projectFolder) => {
-          onApplySessionMode(mode, teamConfig);
+          onApplySessionMode(mode, teamConfig, slots);
           setIsSessionModalOpen(false);
         }}
       />

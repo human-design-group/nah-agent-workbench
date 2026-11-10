@@ -25,6 +25,9 @@ const App: React.FC = () => {
     setSessionMode,
     switchAgentSlot,
     addAgentSlot,
+    closeSlotIndex,
+    closeAgentPanel,
+    reorderSlots,
     setAgentModel,
     setAgentPermissions,
     sendMessageToAgent,
@@ -33,9 +36,15 @@ const App: React.FC = () => {
     exportSession,
     duplicateSession,
     findInSession,
-    closeAgentPanel,
     copyRemoteUrl,
     reloadWorkbench,
+    resetToFreshSessions,
+    availableModels,
+    providerConfig,
+    providerTestResult,
+    isTestingProvider,
+    testProviderConnection,
+    saveProviderConfig,
   } = useWorkbenchState();
 
   return (
@@ -57,11 +66,13 @@ const App: React.FC = () => {
         onDuplicateSession={() => duplicateSession()}
         onCopyRemoteUrl={copyRemoteUrl}
         onAddAgent={(key) => addAgentSlot(key)}
+        onResetToFresh={resetToFreshSessions}
       />
       <GridContainer
         layoutMode={state.layoutMode}
         agents={state.agents}
         slotKeys={state.panelSlots}
+        availableModels={availableModels}
         onSwitchSlot={switchAgentSlot}
         onSendMessage={sendMessageToAgent}
         onSelectModel={setAgentModel}
@@ -73,7 +84,9 @@ const App: React.FC = () => {
         onDuplicateSession={duplicateSession}
         onClearSession={(agentId) => newSession(agentId)}
         onClosePanel={closeAgentPanel}
-        onAddAgentClick={() => addAgentSlot('humano')}
+        onCloseSlot={closeSlotIndex}
+        onReorderSlots={reorderSlots}
+        onAddAgentClick={() => addAgentSlot('gravito')}
       />
 
       {showOnboarding && (
@@ -81,6 +94,11 @@ const App: React.FC = () => {
           availableAgents={state.agents}
           currentSlots={state.panelSlots}
           initialMode={state.sessionMode}
+          providerConfig={providerConfig}
+          providerTestResult={providerTestResult}
+          isTestingProvider={isTestingProvider}
+          onTestProvider={testProviderConnection}
+          onSaveProvider={saveProviderConfig}
           onComplete={completeOnboarding}
           onClose={() => setShowOnboarding(false)}
         />
@@ -96,6 +114,11 @@ const App: React.FC = () => {
           availableAgents={state.agents}
           diagnosticResults={diagnosticResults}
           onRunDiagnostics={runDiagnostics}
+          providerConfig={providerConfig}
+          providerTestResult={providerTestResult}
+          isTestingProvider={isTestingProvider}
+          onTestProvider={testProviderConnection}
+          onSaveProvider={saveProviderConfig}
         />
       )}
     </div>
