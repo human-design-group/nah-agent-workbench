@@ -1,0 +1,126 @@
+#!/usr/bin/env node
+/**
+ * Agento CLI - Lightweight Agent-to-Agent (A2A) Bridge CLI
+ * Communicates with the local Agento Workbench on port 4545.
+ */
+
+const http = require('http');
+
+const PORT = process.env.AGENTO_PORT || 4545;
+const HOST = '127.0.0.1';
+
+const args = process.argv.slice(2);
+const command = args[0];
+
+function request(options, body) {
+  return new Promise((resolve, reject) => {
+    const req = http.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => (data += chunk));
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          resolve({ status: res.statusCode, body: parsed });
+        } catch {
+          resolve({ status: res.statusCode, body: data });
+        }
+      });
+    });
+    req.on('error', reject);
+    if (body) {
+      req.write(typeof body === 'string' ? body : JSON.stringify(body));
+    }
+    req.end();
+  });
+}
+
+async function main() {
+  if (!command || command === 'help' || command === '--help' || command === '-h') {
+    console.log(`
+Agento Workbench CLI — Inter-Agent (A2A) Bridge
+Usage:
+  agento list                    List all active agents in the workbench
+  agento send <agent> "<prompt>" Send a message or delegate a task to an agent
+  agento status                  Check workbench bridge connection status
+`);
+    process.exit(0);
+  }
+
+  if (command === 'status') {
+    try {
+      const res = await request({ host: HOST, port: PORT, path: '/api/info', method: 'GET' });
+      if (res.status === 200) {
+        console.log(`[Agento] Workbench online on http://${HOST}:${PORT}`);
+        console.log(`[Agento] Share code: ${res.body.shareCode || 'N/A'}`);
+      } else {
+        console.error(`[Agento] Workbench returned HTTP ${res.status}`);
+      }
+    } catch (e) {
+      console.error(`[Agento] Could not connect to Agento Workbench on port ${PORT}: ${e.message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (command === 'list') {
+    try {
+      const res = await request({ host: HOST, port: PORT, path: '/api/a2a/agents', method: 'GET' });
+      if (res.status === 200 && res.body.agents) {
+        console.log('\nActive Agento Workbench Agents:');
+        console.log('---------------------------------------------------------');
+        for (const a of res.body.agents) {
+          console.log(` • @${a.key.padEnd(9)} | ${a.name.padEnd(8)} | ${a.runtime.padEnd(12)} | ${a.role}`);
+        }
+        console.log('---------------------------------------------------------\n');
+      } else {
+        console.error(`[Agento] Error listing agents: ${JSON.stringify(res.body)}`);
+      }
+    } catch (e) {
+      console.error(`[Agento] Failed to list agents: ${e.message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (command === 'send') {
+    const to = args[1];
+    const task = args.slice(2).join(' ');
+
+    if (!to || !task) {
+      console.error('Usage: agento send <agent-name> "<message/task>"');
+      process.exit(1);
+    }
+
+    try {
+      const res = await request(
+        {
+          host: HOST,
+          port: PORT,
+          path: '/api/a2a/send',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        },
+        { to, task, from: 'cli' }
+      );
+
+      if (res.status === 200 && res.body.ok) {
+        console.log(`\n[@${to}]: ${res.body.reply}\n`);
+      } else {
+        console.error(`[Agento] Delegation error: ${res.body.error || JSON.stringify(res.body)}`);
+        process.exit(1);
+      }
+    } catch (e) {
+      console.error(`[Agento] Delegation failed: ${e.message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  console.error(`Unknown command: ${command}. Run "agento help" for usage.`);
+  process.exit(1);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

@@ -49,6 +49,41 @@ export interface AgentExecutionResult {
   latencyMs: number;
 }
 
+export const WORKBENCH_TOOLS = [
+  {
+    type: 'function',
+    function: {
+      name: 'agento_send_message',
+      description: 'Delegate a task or send a message to another agent in the Agento workbench (e.g. uno, omo, gravito, astro, humano, curso). The recipient agent executes the task and returns their response.',
+      parameters: {
+        type: 'object',
+        properties: {
+          recipient: {
+            type: 'string',
+            description: 'The key/name of the agent to message (e.g. "omo", "gravito", "uno", "astro", "humano", "curso")',
+          },
+          task: {
+            type: 'string',
+            description: 'The specific task, instruction, or query for the recipient agent to perform.',
+          },
+        },
+        required: ['recipient', 'task'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'agento_list_agents',
+      description: 'List all available agents currently configured in the Agento workbench and their capabilities.',
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+    },
+  },
+];
+
 export class AgentBackend {
   private omniRouteKey: string = '';
   private omniRouteBaseUrl: string = 'http://127.0.0.1:20128';
@@ -116,6 +151,8 @@ export class AgentBackend {
 
   private getAugmentedEnv(): NodeJS.ProcessEnv {
     const extraPaths = [
+      path.join(__dirname, '..', 'bin'),
+      path.join(__dirname, 'bin'),
       path.join(os.homedir(), '.local', 'bin'),
       path.join(os.homedir(), '.npm-global', 'bin'),
       '/usr/local/bin',
@@ -323,22 +360,23 @@ export class AgentBackend {
   public async executeMessage(
     agentKey: string,
     prompt: string,
-    modelName?: string
+    modelName?: string,
+    depth: number = 0
   ): Promise<AgentExecutionResult> {
     const startTime = Date.now();
     const cleanKey = agentKey.replace('agent-', '');
 
     // Grounded canonical personas with ecosystem awareness
     const personas: Record<string, string> = {
-      uno: 'You are Uno, Chief of Staff (CoS) and Strategic Lead on Hermes Gateway for notahuman. You coordinate organizational priorities, brief the CEO (human), oversee operations across all agents (Omo, Gravito, Astro, Humano, Curso), and maintain ecosystem integrity. You are communicating with human in the Agento Agent Workbench extension in Cursor.',
-      omo: 'You are Omo, CTEO and Lead Developer on Hermes Gateway for notahuman. You manage architecture, codebase development, CI/CD pipelines, and adversarial code reviews. You are communicating with human in the Agento Agent Workbench extension in Cursor.',
-      gravito: 'You are Gravito, resident AI Systems Engineer on Google Antigravity in the notahuman ecosystem. You manage MCP infrastructure, extension development, agent workbench architecture, and out-of-band system stabilization. You are communicating directly with human (CEO) inside Cursor IDE via the Agento Agent Workbench extension. Respond in character with deep technical clarity, precision, and systems engineering expertise.',
-      humano: 'You are Humano, Community & Design Specialist on Hermes Gateway for notahuman. You maintain design systems, Figma tokens, UI parity, and front-end polish. You are communicating with human in the Agento Agent Workbench extension in Cursor.',
-      curso: 'You are Curso, Ephemeral Developer and Editor Specialist inside Cursor IDE for notahuman. You specialize in swift, inline code repairs, editor ergonomics, and workspace diagnostics. You are communicating with human in the Agento Agent Workbench extension in Cursor.',
-      astro: 'You are Astro, Context-Aware Ideation Partner & AI Systems Architect on Hermes Gateway for notahuman. You ideate on architectures, design roadmaps, and explore technical paradigms with creative velocity for the CEO (human). You are communicating with human in the Agento Agent Workbench extension in Cursor.',
+      uno: 'You are Uno, Chief of Staff (CoS) and Strategic Lead on Hermes Gateway for notahuman. You coordinate organizational priorities, brief the CEO (human), oversee operations across all agents (Omo, Gravito, Astro, Humano, Curso), and maintain ecosystem integrity. You are communicating with human in the Agento Agent Workbench extension in Cursor. You have access to the workbench tool agento_send_message to delegate tasks to other agents (e.g. omo, gravito, astro, humano, curso).',
+      omo: 'You are Omo, CTEO and Lead Developer on Hermes Gateway for notahuman. You manage architecture, codebase development, CI/CD pipelines, and adversarial code reviews. You are communicating with human in the Agento Agent Workbench extension in Cursor. You have access to the workbench tool agento_send_message to coordinate with other agents.',
+      gravito: 'You are Gravito, resident AI Systems Engineer on Google Antigravity in the notahuman ecosystem. You manage MCP infrastructure, extension development, agent workbench architecture, and out-of-band system stabilization. You are communicating directly with human (CEO) inside Cursor IDE via the Agento Agent Workbench extension. Respond in character with deep technical clarity, precision, and systems engineering expertise. You have access to the workbench tool agento_send_message to delegate tasks to other agents.',
+      humano: 'You are Humano, Community & Design Specialist on Hermes Gateway for notahuman. You maintain design systems, Figma tokens, UI parity, and front-end polish. You are communicating with human in the Agento Agent Workbench extension in Cursor. You have access to the workbench tool agento_send_message.',
+      curso: 'You are Curso, Ephemeral Developer and Editor Specialist inside Cursor IDE for notahuman. You specialize in swift, inline code repairs, editor ergonomics, and workspace diagnostics. You are communicating with human in the Agento Agent Workbench extension in Cursor. You have access to the workbench tool agento_send_message.',
+      astro: 'You are Astro, Context-Aware Ideation Partner & AI Systems Architect on Hermes Gateway for notahuman. You ideate on architectures, design roadmaps, and explore technical paradigms with creative velocity for the CEO (human). You are communicating with human in the Agento Agent Workbench extension in Cursor. You have access to the workbench tool agento_send_message.',
     };
 
-    const systemPrompt = personas[cleanKey] || `You are ${cleanKey}, an active agent in the notahuman ecosystem.`;
+    const systemPrompt = personas[cleanKey] || `You are ${cleanKey}, an active agent in the notahuman ecosystem. You have access to agento_send_message to communicate with peer agents.`;
 
     // Normalize effective model first so it can be passed to CLI or API
     let effectiveModel = modelName?.trim();
@@ -352,9 +390,9 @@ export class AgentBackend {
       effectiveModel = this.getDefaultModelForAgent(cleanKey);
     }
 
-    // Attempt Hermes CLI execution if it is a Hermes agent
+    // Attempt Hermes CLI execution if it is a Hermes agent and not a recursive delegation call
     const isHermesAgent = ['uno', 'omo', 'humano', 'astro'].includes(cleanKey);
-    if (isHermesAgent) {
+    if (isHermesAgent && depth === 0) {
       try {
         const cliResult = await this.runHermesCli(cleanKey, prompt, effectiveModel, 65000);
         if (cliResult && cliResult.trim().length > 0) {
@@ -387,11 +425,11 @@ export class AgentBackend {
         this.providerConfig.type !== 'omniroute' &&
         (this.providerConfig.apiKey || this.providerConfig.type === 'ollama' || this.providerConfig.type === 'lmstudio')
       ) {
-        return this.queryOpenAICompatible(this.providerConfig, cleanKey, systemPrompt, prompt, effectiveModel, startTime);
+        return this.queryOpenAICompatible(this.providerConfig, cleanKey, systemPrompt, prompt, effectiveModel, startTime, depth);
       }
     }
 
-    return this.queryOmniRoute(cleanKey, systemPrompt, prompt, effectiveModel, startTime);
+    return this.queryOmniRoute(cleanKey, systemPrompt, prompt, effectiveModel, startTime, depth);
   }
 
   private getDefaultModelForAgent(key: string): string {
@@ -511,7 +549,8 @@ export class AgentBackend {
     systemPrompt: string,
     prompt: string,
     model: string,
-    startTime: number
+    startTime: number,
+    depth: number = 0
   ): Promise<AgentExecutionResult> {
     const key = this.loadOmniRouteKey();
     const url = `${this.omniRouteBaseUrl}/v1/chat/completions`;
@@ -542,6 +581,7 @@ export class AgentBackend {
               { role: 'system', content: systemPrompt },
               { role: 'user', content: prompt },
             ],
+            tools: WORKBENCH_TOOLS,
             max_tokens: 2048,
           }),
         });
@@ -555,6 +595,92 @@ export class AgentBackend {
 
         const data = (await resp.json()) as any;
         const choice = data.choices?.[0];
+
+        // Handle Tool Calls (A2A / Function Calling)
+        if (choice?.message?.tool_calls && choice.message.tool_calls.length > 0 && depth < 3) {
+          const executedToolCalls: { name: string; status: 'running' | 'done' | 'error'; summary?: string }[] = [];
+          const followUpMessages: any[] = [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt },
+            choice.message,
+          ];
+
+          for (const tc of choice.message.tool_calls) {
+            if (tc.function?.name === 'agento_send_message') {
+              try {
+                const args = JSON.parse(tc.function.arguments || '{}');
+                const targetAgent = args.recipient?.toLowerCase()?.replace('@', '') || 'omo';
+                const subTask = args.task || 'Please provide status update.';
+                executedToolCalls.push({
+                  name: `Delegated to @${targetAgent}`,
+                  status: 'running',
+                  summary: subTask.slice(0, 60),
+                });
+
+                const subResult = await this.executeMessage(targetAgent, subTask, undefined, depth + 1);
+
+                executedToolCalls[executedToolCalls.length - 1].status = 'done';
+                executedToolCalls[executedToolCalls.length - 1].summary = `Completed: ${subResult.content.slice(0, 70)}...`;
+
+                followUpMessages.push({
+                  role: 'tool',
+                  tool_call_id: tc.id,
+                  content: `Response from @${targetAgent}: ${subResult.content}`,
+                });
+              } catch (err: any) {
+                followUpMessages.push({
+                  role: 'tool',
+                  tool_call_id: tc.id,
+                  content: `Error communicating with agent: ${err.message}`,
+                });
+              }
+            } else if (tc.function?.name === 'agento_list_agents') {
+              const roster = this.discoverAgents().map((a) => `@${a.key}: ${a.name} (${a.role})`);
+              executedToolCalls.push({
+                name: 'List Workbench Agents',
+                status: 'done',
+                summary: `${roster.length} agents discovered`,
+              });
+              followUpMessages.push({
+                role: 'tool',
+                tool_call_id: tc.id,
+                content: JSON.stringify(roster),
+              });
+            }
+          }
+
+          // Second turn synthesis
+          try {
+            const synthResp = await fetch(url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(key ? { Authorization: `Bearer ${key}` } : {}),
+              },
+              body: JSON.stringify({
+                model: currentModel,
+                messages: followUpMessages,
+                max_tokens: 2048,
+              }),
+            });
+
+            if (synthResp.ok) {
+              const synthData = (await synthResp.json()) as any;
+              const synthChoice = synthData.choices?.[0];
+              const synthContent = synthChoice?.message?.content || choice?.message?.content;
+              return {
+                content: synthContent,
+                thinking: `Orchestrated cross-agent delegation loop with ${executedToolCalls.length} tool invocation(s).`,
+                toolCalls: executedToolCalls,
+                tokens: synthData.usage?.total_tokens || 350,
+                latencyMs: Date.now() - startTime,
+              };
+            }
+          } catch (synthErr) {
+            console.warn('[AgentBackend] Tool synthesis turn failed:', synthErr);
+          }
+        }
+
         let content = choice?.message?.content || choice?.message?.reasoning_content || 'Response processed successfully.';
 
         if (!choice?.message?.content && choice?.message?.reasoning_content) {
@@ -800,7 +926,8 @@ export class AgentBackend {
     systemPrompt: string,
     prompt: string,
     model: string,
-    startTime: number
+    startTime: number,
+    depth: number = 0
   ): Promise<AgentExecutionResult> {
     let baseUrl = config.baseUrl || 'https://api.openai.com/v1';
     if (config.type === 'openrouter') baseUrl = 'https://openrouter.ai/api/v1';
@@ -834,7 +961,8 @@ export class AgentBackend {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt },
           ],
-          max_tokens: 800,
+          tools: WORKBENCH_TOOLS,
+          max_tokens: 1024,
         }),
       });
 
@@ -845,6 +973,91 @@ export class AgentBackend {
 
       const data = (await resp.json()) as any;
       const choice = data.choices?.[0];
+
+      // Handle Tool Calls (A2A / Function Calling)
+      if (choice?.message?.tool_calls && choice.message.tool_calls.length > 0 && depth < 3) {
+        const executedToolCalls: { name: string; status: 'running' | 'done' | 'error'; summary?: string }[] = [];
+        const followUpMessages: any[] = [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt },
+          choice.message,
+        ];
+
+        for (const tc of choice.message.tool_calls) {
+          if (tc.function?.name === 'agento_send_message') {
+            try {
+              const args = JSON.parse(tc.function.arguments || '{}');
+              const targetAgent = args.recipient?.toLowerCase()?.replace('@', '') || 'omo';
+              const subTask = args.task || 'Please provide status update.';
+              executedToolCalls.push({
+                name: `Delegated to @${targetAgent}`,
+                status: 'running',
+                summary: subTask.slice(0, 60),
+              });
+
+              const subResult = await this.executeMessage(targetAgent, subTask, undefined, depth + 1);
+
+              executedToolCalls[executedToolCalls.length - 1].status = 'done';
+              executedToolCalls[executedToolCalls.length - 1].summary = `Completed: ${subResult.content.slice(0, 70)}...`;
+
+              followUpMessages.push({
+                role: 'tool',
+                tool_call_id: tc.id,
+                content: `Response from @${targetAgent}: ${subResult.content}`,
+              });
+            } catch (err: any) {
+              followUpMessages.push({
+                role: 'tool',
+                tool_call_id: tc.id,
+                content: `Error communicating with agent: ${err.message}`,
+              });
+            }
+          } else if (tc.function?.name === 'agento_list_agents') {
+            const roster = this.discoverAgents().map((a) => `@${a.key}: ${a.name} (${a.role})`);
+            executedToolCalls.push({
+              name: 'List Workbench Agents',
+              status: 'done',
+              summary: `${roster.length} agents discovered`,
+            });
+            followUpMessages.push({
+              role: 'tool',
+              tool_call_id: tc.id,
+              content: JSON.stringify(roster),
+            });
+          }
+        }
+
+        try {
+          const synthResp = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}),
+            },
+            body: JSON.stringify({
+              model: targetModel,
+              messages: followUpMessages,
+              max_tokens: 1024,
+            }),
+          });
+
+          if (synthResp.ok) {
+            const synthData = (await synthResp.json()) as any;
+            const synthChoice = synthData.choices?.[0];
+            const synthContent = synthChoice?.message?.content || choice?.message?.content;
+            return {
+              content: synthContent,
+              thinking: `Orchestrated cross-agent delegation loop with ${executedToolCalls.length} tool invocation(s).`,
+              toolCalls: executedToolCalls,
+              tokens: synthData.usage?.total_tokens || 350,
+              latencyMs: Date.now() - startTime,
+            };
+          }
+        } catch (synthErr) {
+          console.warn('[AgentBackend] Tool synthesis turn failed:', synthErr);
+        }
+      }
+
       const content = choice?.message?.content || choice?.message?.reasoning_content || 'Response processed.';
       const tokens = data.usage?.total_tokens || Math.ceil((prompt.length + content.length) / 4);
       const latencyMs = Date.now() - startTime;

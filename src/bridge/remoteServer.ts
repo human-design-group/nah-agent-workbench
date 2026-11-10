@@ -8,6 +8,8 @@ export interface RemoteServerOptions {
   port?: number;
   extensionPath: string;
   onClientMessage?: (msg: any) => void;
+  onA2aSend?: (to: string, task: string, from?: string) => Promise<any>;
+  onA2aListAgents?: () => any[];
 }
 
 export class RemoteControlServer {
@@ -17,12 +19,16 @@ export class RemoteControlServer {
   private shareCode: string = '';
   private extensionPath: string;
   private onClientMessage?: (msg: any) => void;
+  private onA2aSend?: (to: string, task: string, from?: string) => Promise<any>;
+  private onA2aListAgents?: () => any[];
   private connectedSockets: Set<WebSocket> = new Set();
 
   constructor(options: RemoteServerOptions) {
     this.port = options.port || 4545;
     this.extensionPath = options.extensionPath;
     this.onClientMessage = options.onClientMessage;
+    this.onA2aSend = options.onA2aSend;
+    this.onA2aListAgents = options.onA2aListAgents;
     this.shareCode = this.generateShareCode();
   }
 
@@ -162,6 +168,51 @@ export class RemoteControlServer {
           workspaceUrl: this.getWorkspaceUrl(),
         })
       );
+      return;
+    }
+
+    // A2A List endpoint
+    if (urlPath === '/api/a2a/agents' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      const agents = this.onA2aListAgents ? this.onA2aListAgents() : [
+        { key: 'uno', name: 'Uno', role: 'Chief of Staff & Strategic Lead', runtime: 'Hermes' },
+        { key: 'omo', name: 'Omo', role: 'Lead Developer & Engineering Lead', runtime: 'Hermes' },
+        { key: 'gravito', name: 'Gravito', role: 'AI Systems Engineer', runtime: 'Antigravity' },
+        { key: 'astro', name: 'Astro', role: 'AI Systems Architect & Ideator', runtime: 'Hermes' },
+        { key: 'humano', name: 'Humano', role: 'Community & Design Specialist', runtime: 'Hermes' },
+        { key: 'curso', name: 'Curso', role: 'Ephemeral Developer (Editor Specialist)', runtime: 'Cursor IDE' },
+      ];
+      res.end(JSON.stringify({ ok: true, agents }));
+      return;
+    }
+
+    // A2A Send / Delegation endpoint
+    if (urlPath === '/api/a2a/send' && req.method === 'POST') {
+      let bodyData = '';
+      req.on('data', (chunk) => (bodyData += chunk));
+      req.on('end', async () => {
+        try {
+          const parsed = JSON.parse(bodyData || '{}');
+          const { to, task, from } = parsed;
+          if (!to || !task) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: false, error: 'Fields "to" and "task" are required.' }));
+            return;
+          }
+
+          if (this.onA2aSend) {
+            const result = await this.onA2aSend(to, task, from);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: true, ...result }));
+          } else {
+            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: false, error: 'A2A dispatcher not connected.' }));
+          }
+        } catch (err: any) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false, error: err.message }));
+        }
+      });
       return;
     }
 

@@ -26,6 +26,37 @@ export function activate(context: vscode.ExtensionContext) {
         currentPanel.webview.postMessage(msg);
       }
     },
+    onA2aSend: async (to, task, from) => {
+      const res = await agentBackend.executeMessage(to, task);
+      if (currentPanel) {
+        currentPanel.webview.postMessage({
+          type: 'AGENT_MESSAGE_RECEIVED',
+          payload: {
+            agentId: to,
+            message: {
+              id: `resp-${Date.now()}`,
+              sender: 'agent',
+              senderName: to,
+              content: res.content,
+              thinking: res.thinking,
+              toolCalls: res.toolCalls,
+              tokens: res.tokens,
+              latencyMs: res.latencyMs,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            },
+          },
+        });
+      }
+      return { recipient: to, reply: res.content, thinking: res.thinking, toolCalls: res.toolCalls };
+    },
+    onA2aListAgents: () => {
+      return agentBackend.discoverAgents().map((a) => ({
+        key: a.key,
+        name: a.name,
+        role: a.role,
+        runtime: a.runtime,
+      }));
+    },
   });
 
   remoteServer
@@ -472,6 +503,20 @@ function getWebviewContent(context: vscode.ExtensionContext, webview: vscode.Web
   <style>
     :root {
       --bg-damask-image: url('${bgUri}');
+    }
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      overflow: hidden !important;
+      background-color: #080f12 !important;
+    }
+    #root {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
     }
   </style>
   <title>Agento — Agent Workbench</title>

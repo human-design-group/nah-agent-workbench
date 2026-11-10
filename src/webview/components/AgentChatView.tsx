@@ -142,17 +142,19 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
   const PERMS = ['Autonomous', 'Supervised', 'Auto-Approve', 'Default', 'Sandbox'];
 
   // Calculate live context token threshold & usage ratio
-  const sessionTokens = (agent.messages || []).reduce((acc, m) => acc + (m.tokens || 0), 0) || 12545;
+  const sessionTokens = (agent.messages || []).reduce((acc, m) => acc + (m.tokens || 0), 0);
+  const displayTokens = sessionTokens > 0 ? sessionTokens : 1280;
   const getContextThreshold = (mName?: string): number => {
     if (!mName) return 128000;
     const lower = mName.toLowerCase();
     if (lower.includes('2.5') || lower.includes('gemini')) return 1000000;
     if (lower.includes('claude') || lower.includes('sonnet') || lower.includes('opus')) return 200000;
     if (lower.includes('system-one')) return 32000;
+    if (lower.includes('deepseek') || lower.includes('nemotron') || lower.includes('llama')) return 128000;
     return 128000;
   };
   const contextThreshold = getContextThreshold(agent.selectedModel);
-  const usageRatio = Math.min(100, Math.max(8, Math.round((sessionTokens / contextThreshold) * 100)));
+  const usageRatio = Math.min(100, Math.max(4, Math.round((displayTokens / contextThreshold) * 100)));
 
   return (
     <div className="agent-chat-view-root" data-name="chat-container">
@@ -307,7 +309,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
         <div className="composer-toolbar" data-name="chat-actions">
           <div className="composer-controls-left" data-name="model-permissions-select">
             {/* Cyan Circular Add Context Button */}
-            <div className="relative" ref={addContextMenuRef}>
+            <div className="relative" ref={addContextMenuRef} style={{ border: 'none', outline: 'none' }}>
               <button
                 type="button"
                 className="btn-add-context-circle"
@@ -325,37 +327,44 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
               />
             </div>
 
-            {/* Selector Label Pill with solid indicator underline */}
-            <div className="dropdown-pill-wrapper" ref={permsMenuRef} data-name="dropdown-select">
-              <div
-                className="control-pill"
-                title={`Permissions Mode: ${agent.permissionsMode || 'Autonomous'}`}
-                onClick={() => setShowPermsMenu(!showPermsMenu)}
-                data-name="label-and-permission-indicator"
-              >
-                <span className="pill-text-label">{agent.permissionsMode || 'Autonomous'}</span>
-                <IconArrowDownS2 size={20} color="#0094D9" />
-                <div className="permissions-solid-indicator" data-name="permissions-indicator" />
-              </div>
+            {/* Permissions / Mode Selector Pill with solid indicator underline */}
+            {(() => {
+              const activePerm = agent.permissionsMode && agent.permissionsMode !== 'Selector Label'
+                ? agent.permissionsMode
+                : 'Autonomous';
+              return (
+                <div className="dropdown-pill-wrapper" ref={permsMenuRef} data-name="dropdown-select">
+                  <div
+                    className="control-pill"
+                    title={`Permissions Mode: ${activePerm}`}
+                    onClick={() => setShowPermsMenu(!showPermsMenu)}
+                    data-name="label-and-permission-indicator"
+                  >
+                    <span className="pill-text-label">{activePerm}</span>
+                    <IconArrowDownS2 size={20} color="#0094D9" />
+                    <div className="permissions-solid-indicator" data-name="permissions-indicator" />
+                  </div>
 
-              {showPermsMenu && (
-                <div className="pill-dropdown-menu">
-                  {PERMS.map((p) => (
-                    <div
-                      key={p}
-                      className={`pill-menu-item ${p === (agent.permissionsMode || 'Autonomous') ? 'selected' : ''}`}
-                      onClick={() => {
-                        onSelectPermissions(p);
-                        setShowPermsMenu(false);
-                      }}
-                    >
-                      <span>{p}</span>
-                      {p === (agent.permissionsMode || 'Autonomous') && <span className="text-cyan ml-1">✓</span>}
+                  {showPermsMenu && (
+                    <div className="pill-dropdown-menu">
+                      {PERMS.map((p) => (
+                        <div
+                          key={p}
+                          className={`pill-menu-item ${p === activePerm ? 'selected' : ''}`}
+                          onClick={() => {
+                            onSelectPermissions(p);
+                            setShowPermsMenu(false);
+                          }}
+                        >
+                          <span>{p}</span>
+                          {p === activePerm && <span className="text-cyan ml-1">✓</span>}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })()}
 
             {/* Model Selector Pill with live context / token usage meter underline */}
             <div
@@ -365,7 +374,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
             >
               <div
                 className="control-pill model-control-pill with-rainbow"
-                title={`Selected Model: ${agent.selectedModel} • Live Context: ${sessionTokens.toLocaleString()} / ${contextThreshold.toLocaleString()} tokens (${usageRatio}% used)`}
+                title={`Selected Model: ${agent.selectedModel} • Live Context: ${displayTokens.toLocaleString()} / ${contextThreshold.toLocaleString()} tokens (${usageRatio}% used)`}
                 onClick={() => setShowModelMenu(!showModelMenu)}
                 data-name="model-and-context-meter"
               >
@@ -374,7 +383,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({
                 {/* Live Context/Token Usage Meter Underline */}
                 <div
                   className="model-context-meter-track"
-                  title={`Live Context: ${sessionTokens.toLocaleString()} / ${contextThreshold.toLocaleString()} tokens (${usageRatio}% used)`}
+                  title={`Live Context: ${displayTokens.toLocaleString()} / ${contextThreshold.toLocaleString()} tokens (${usageRatio}% used)`}
                   data-name="context-meter"
                 >
                   <div className="model-rainbow-bar" style={{ width: `${usageRatio}%` }} />

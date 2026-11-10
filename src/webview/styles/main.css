@@ -106,8 +106,10 @@
 }
 
 body, html {
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
   overflow: hidden;
   font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 14px;
@@ -116,8 +118,10 @@ body, html {
 }
 
 #root {
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .workbench-app {
@@ -447,7 +451,7 @@ body, html {
 }
 
 .panel-is-dragging {
-  opacity: 0.45 !important;
+  opacity: 0.65 !important;
   transition: opacity 0.15s ease;
 }
 
@@ -462,7 +466,10 @@ body, html {
   align-items: center;
   gap: 4px;
   background: transparent;
-  border: none;
+  border: none !important;
+  border-bottom: none !important;
+  outline: none !important;
+  box-shadow: none !important;
   cursor: pointer;
   padding: 2px 4px;
   border-radius: var(--radius-sm, 2px);
@@ -471,6 +478,7 @@ body, html {
   font-size: 13px;
   font-weight: 500;
   position: relative;
+  text-decoration: none !important;
   transition: background 0.15s;
 }
 
@@ -478,16 +486,28 @@ body, html {
   background: rgba(0, 148, 217, 0.15);
 }
 
+.session-dropdown-trigger:focus,
+.session-dropdown-trigger:focus-visible,
+.session-dropdown-trigger:active {
+  outline: none !important;
+  border: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
 .dropdown-label-text {
   font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 13px;
   font-weight: 500;
   color: var(--color-brand-almost-white, #f5fcff);
+  border-bottom: none !important;
+  text-decoration: none !important;
 }
 
 .session-name-wrapper {
   position: relative;
   max-width: 240px;
+  border-bottom: none !important;
 }
 
 .session-title-truncate {
@@ -495,6 +515,8 @@ body, html {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  border-bottom: none !important;
+  text-decoration: none !important;
 }
 
 .session-active-underline {
@@ -1020,11 +1042,12 @@ body, html {
   font-family: "SF Pro Rounded", -apple-system, BlinkMacSystemFont, sans-serif;
   outline: none;
   resize: none;
-  min-height: 42px;
+  min-height: 48px;
   max-height: 140px;
   line-height: 20px;
   white-space: pre-wrap;
-  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   overflow-y: auto;
 }
 
@@ -2590,6 +2613,7 @@ body, html, p, span, div, input, textarea, pre, button {
   background: transparent !important;
   color: #0094d9;
   border: none !important;
+  outline: none !important;
   box-shadow: none !important;
   cursor: pointer;
   transition: opacity 0.15s ease;
@@ -2597,9 +2621,14 @@ body, html, p, span, div, input, textarea, pre, button {
   padding: 0 !important;
 }
 
-.btn-add-context-circle:hover {
+.btn-add-context-circle:hover,
+.btn-add-context-circle:focus,
+.btn-add-context-circle:focus-visible,
+.btn-add-context-circle:active {
   background: transparent !important;
   opacity: 0.8 !important;
+  outline: none !important;
+  border: none !important;
   box-shadow: none !important;
 }
 
@@ -2608,9 +2637,25 @@ body, html, p, span, div, input, textarea, pre, button {
   height: 26px;
   background: transparent !important;
   border: none !important;
+  outline: none !important;
   box-shadow: none !important;
   color: #0094d9;
   padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.send-circle-btn:hover,
+.send-circle-btn:focus,
+.send-circle-btn:focus-visible,
+.send-circle-btn:active {
+  background: transparent !important;
+  opacity: 0.8 !important;
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* Model Control Pill Adaptive Width */

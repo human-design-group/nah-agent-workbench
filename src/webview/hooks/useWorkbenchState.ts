@@ -24,7 +24,7 @@ export const CANONICAL_AGENTS: AgentConfig[] = [
     status: 'online',
     viewMode: 'chat',
     selectedModel: 'nah-general-combo',
-    permissionsMode: 'Supervised',
+    permissionsMode: 'Autonomous',
     gitStatus: {
       workspace: 'notahuman',
       worktree: 'uno/cos-briefing',
@@ -354,6 +354,9 @@ export function useWorkbenchState() {
                   else if (a.key === 'curso') defaultM = 'curso-operations';
                   updated.selectedModel = defaultM;
                 }
+                if (!updated.permissionsMode || updated.permissionsMode === 'Selector Label') {
+                  updated.permissionsMode = 'Autonomous';
+                }
                 return updated;
               });
 
@@ -575,18 +578,27 @@ export function useWorkbenchState() {
   }, []);
 
   const setAgentModel = useCallback((agentId: string, model: string) => {
-    setState((prev) => ({
-      ...prev,
-      agents: prev.agents.map((a) => (a.id === agentId ? { ...a, selectedModel: model } : a)),
-    }));
-  }, []);
+    setState((prev) => {
+      const newState = {
+        ...prev,
+        agents: prev.agents.map((a) => (a.id === agentId ? { ...a, selectedModel: model } : a)),
+      };
+      vscode.postMessage({ type: 'SAVE_STATE', payload: newState });
+      return newState;
+    });
+  }, [vscode]);
 
   const setAgentPermissions = useCallback((agentId: string, mode: string) => {
-    setState((prev) => ({
-      ...prev,
-      agents: prev.agents.map((a) => (a.id === agentId ? { ...a, permissionsMode: mode } : a)),
-    }));
-  }, []);
+    setState((prev) => {
+      const sanitizedMode = mode === 'Selector Label' ? 'Autonomous' : mode;
+      const newState = {
+        ...prev,
+        agents: prev.agents.map((a) => (a.id === agentId ? { ...a, permissionsMode: sanitizedMode } : a)),
+      };
+      vscode.postMessage({ type: 'SAVE_STATE', payload: newState });
+      return newState;
+    });
+  }, [vscode]);
 
   const sendMessageToAgent = useCallback((agentId: string, text: string, attachments?: any[]) => {
     if (!text.trim()) return;
