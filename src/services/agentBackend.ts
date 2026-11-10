@@ -74,26 +74,11 @@ export class AgentBackend {
   }
 
   private detectInitialProvider(): void {
-    // Check if OpenRouter, Anthropic, or OpenAI keys exist in environment
-    if (process.env.OPENROUTER_API_KEY) {
-      this.providerConfig = {
-        type: 'openrouter',
-        baseUrl: 'https://openrouter.ai/api/v1',
-        apiKey: process.env.OPENROUTER_API_KEY,
-      };
-    } else if (process.env.ANTHROPIC_API_KEY) {
-      this.providerConfig = {
-        type: 'anthropic',
-        baseUrl: 'https://api.anthropic.com/v1',
-        apiKey: process.env.ANTHROPIC_API_KEY,
-      };
-    } else if (process.env.OPENAI_API_KEY) {
-      this.providerConfig = {
-        type: 'openai',
-        baseUrl: 'https://api.openai.com/v1',
-        apiKey: process.env.OPENAI_API_KEY,
-      };
-    }
+    // Default to local OmniRoute gateway on localhost:20128 for notahuman ecosystem
+    this.providerConfig = {
+      type: 'omniroute',
+      baseUrl: 'http://127.0.0.1:20128',
+    };
   }
 
   private loadOmniRouteKey(): string {
@@ -343,39 +328,19 @@ export class AgentBackend {
     const startTime = Date.now();
     const cleanKey = agentKey.replace('agent-', '');
 
-    // Canonical descriptions
+    // Grounded canonical personas with ecosystem awareness
     const personas: Record<string, string> = {
-      uno: 'You are Uno, Chief of Staff (CoS) and CEO Liaison on Hermes Gateway for notahuman. Respond concisely and professionally with organizational status and executive clarity.',
-      omo: 'You are Omo, Lead Developer and Engineering Lead on Hermes Gateway for notahuman. Respond as an expert systems engineer with technical depth, code review, and precision.',
-      gravito: 'You are Gravito, AI Systems Engineer and Specialist on Antigravity for notahuman. You manage MCP infrastructure, extension development, and autonomous tool workflows.',
-      humano: 'You are Humano, Community & Design Specialist on Hermes Gateway for notahuman. You align design systems, UI components, and Figma tokens.',
-      curso: 'You are Curso, Ephemeral Developer and Editor Specialist inside Cursor IDE for notahuman. You specialize in swift, inline code repairs and editor ergonomics.',
-      astro: 'You are Astro, AI Systems Architect & Ideator on Hermes Gateway for notahuman. You architect systems, design roadmaps, and explore technical paradigms.',
+      uno: 'You are Uno, Chief of Staff (CoS) and Strategic Lead on Hermes Gateway for notahuman. You coordinate organizational priorities, brief the CEO (human), oversee operations across all agents (Omo, Gravito, Astro, Humano, Curso), and maintain ecosystem integrity. You are communicating with human in the Agento Agent Workbench extension in Cursor.',
+      omo: 'You are Omo, CTEO and Lead Developer on Hermes Gateway for notahuman. You manage architecture, codebase development, CI/CD pipelines, and adversarial code reviews. You are communicating with human in the Agento Agent Workbench extension in Cursor.',
+      gravito: 'You are Gravito, resident AI Systems Engineer on Google Antigravity in the notahuman ecosystem. You manage MCP infrastructure, extension development, agent workbench architecture, and out-of-band system stabilization. You are communicating directly with human (CEO) inside Cursor IDE via the Agento Agent Workbench extension. Respond in character with deep technical clarity, precision, and systems engineering expertise.',
+      humano: 'You are Humano, Community & Design Specialist on Hermes Gateway for notahuman. You maintain design systems, Figma tokens, UI parity, and front-end polish. You are communicating with human in the Agento Agent Workbench extension in Cursor.',
+      curso: 'You are Curso, Ephemeral Developer and Editor Specialist inside Cursor IDE for notahuman. You specialize in swift, inline code repairs, editor ergonomics, and workspace diagnostics. You are communicating with human in the Agento Agent Workbench extension in Cursor.',
+      astro: 'You are Astro, Context-Aware Ideation Partner & AI Systems Architect on Hermes Gateway for notahuman. You ideate on architectures, design roadmaps, and explore technical paradigms with creative velocity for the CEO (human). You are communicating with human in the Agento Agent Workbench extension in Cursor.',
     };
 
     const systemPrompt = personas[cleanKey] || `You are ${cleanKey}, an active agent in the notahuman ecosystem.`;
 
-    // Attempt Hermes CLI execution if it is a Hermes agent
-    const isHermesAgent = ['uno', 'omo', 'humano', 'astro'].includes(cleanKey);
-    if (isHermesAgent) {
-      try {
-        const cliResult = await this.runHermesCli(cleanKey, prompt, 35000);
-        if (cliResult && cliResult.trim().length > 0) {
-          const latencyMs = Date.now() - startTime;
-          return {
-            content: cliResult,
-            thinking: `Executed reasoning chain via Hermes profile [${cleanKey}] on Hermes Gateway.`,
-            toolCalls: [{ name: `hermes -p ${cleanKey}`, status: 'done', summary: 'Hermes execution verified' }],
-            tokens: Math.ceil(cliResult.length / 4) + 60,
-            latencyMs,
-          };
-        }
-      } catch (err: any) {
-        console.warn(`[AgentBackend] Hermes CLI for ${cleanKey} skipped/timed out (${err.message}), falling back to OmniRoute.`);
-      }
-    }
-
-    // OmniRoute Execution: validate and normalize model
+    // Normalize effective model first so it can be passed to CLI or API
     let effectiveModel = modelName?.trim();
     if (
       !effectiveModel ||
@@ -387,14 +352,43 @@ export class AgentBackend {
       effectiveModel = this.getDefaultModelForAgent(cleanKey);
     }
 
-    // Check if user has an active direct cloud or local provider configured
-    if (this.providerConfig.type === 'anthropic' && this.providerConfig.apiKey) {
-      return this.queryAnthropicDirect(cleanKey, systemPrompt, prompt, effectiveModel, startTime);
-    } else if (
-      this.providerConfig.type !== 'omniroute' &&
-      (this.providerConfig.apiKey || this.providerConfig.type === 'ollama' || this.providerConfig.type === 'lmstudio')
-    ) {
-      return this.queryOpenAICompatible(this.providerConfig, cleanKey, systemPrompt, prompt, effectiveModel, startTime);
+    // Attempt Hermes CLI execution if it is a Hermes agent
+    const isHermesAgent = ['uno', 'omo', 'humano', 'astro'].includes(cleanKey);
+    if (isHermesAgent) {
+      try {
+        const cliResult = await this.runHermesCli(cleanKey, prompt, effectiveModel, 65000);
+        if (cliResult && cliResult.trim().length > 0) {
+          const latencyMs = Date.now() - startTime;
+          return {
+            content: cliResult,
+            thinking: `Executed reasoning chain via Hermes profile [${cleanKey}] using model [${effectiveModel}].`,
+            toolCalls: [{ name: `hermes -p ${cleanKey}`, status: 'done', summary: `Model: ${effectiveModel}` }],
+            tokens: Math.ceil(cliResult.length / 4) + 60,
+            latencyMs,
+          };
+        }
+      } catch (err: any) {
+        console.warn(`[AgentBackend] Hermes CLI for ${cleanKey} skipped/timed out (${err.message}), falling back to OmniRoute.`);
+      }
+    }
+
+    // If model is an ecosystem combo or OmniRoute model, ALWAYS route via OmniRoute!
+    const isEcosystemModel =
+      effectiveModel.includes('combo') ||
+      effectiveModel.includes('primary') ||
+      effectiveModel.includes('operations') ||
+      effectiveModel.includes('static-best');
+
+    if (!isEcosystemModel) {
+      // Check if user has an active direct cloud or local provider configured
+      if (this.providerConfig.type === 'anthropic' && this.providerConfig.apiKey) {
+        return this.queryAnthropicDirect(cleanKey, systemPrompt, prompt, effectiveModel, startTime);
+      } else if (
+        this.providerConfig.type !== 'omniroute' &&
+        (this.providerConfig.apiKey || this.providerConfig.type === 'ollama' || this.providerConfig.type === 'lmstudio')
+      ) {
+        return this.queryOpenAICompatible(this.providerConfig, cleanKey, systemPrompt, prompt, effectiveModel, startTime);
+      }
     }
 
     return this.queryOmniRoute(cleanKey, systemPrompt, prompt, effectiveModel, startTime);
@@ -418,18 +412,25 @@ export class AgentBackend {
     }
   }
 
-  private runHermesCli(profile: string, prompt: string, timeoutMs: number): Promise<string> {
+  private runHermesCli(
+    profile: string,
+    prompt: string,
+    modelName?: string,
+    timeoutMs: number = 65000
+  ): Promise<string> {
     return new Promise((resolve, reject) => {
       let resolved = false;
       const hermesBin = this.findHermesBinary();
       const env = this.getAugmentedEnv();
 
-      // Programmatic non-interactive execution: --oneshot -Q
-      const proc = spawn(
-        hermesBin,
-        ['-p', profile, '--accept-hooks', 'chat', '--oneshot', '-Q', '-q', prompt],
-        { env }
-      );
+      // Programmatic non-interactive execution: hermes -p <profile> chat [-m <model>] -q "<prompt>" --oneshot -Q
+      const args = ['-p', profile, 'chat'];
+      if (modelName && !modelName.startsWith('OmniRoute -') && !modelName.includes('undefined')) {
+        args.push('-m', modelName);
+      }
+      args.push('-q', prompt, '--oneshot', '-Q');
+
+      const proc = spawn(hermesBin, args, { env });
 
       let stdout = '';
       let stderr = '';
@@ -541,7 +542,7 @@ export class AgentBackend {
               { role: 'system', content: systemPrompt },
               { role: 'user', content: prompt },
             ],
-            max_tokens: 600,
+            max_tokens: 2048,
           }),
         });
 
